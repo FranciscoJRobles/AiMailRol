@@ -1,0 +1,42 @@
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+
+# Archivos de entorno
+.env
+.env.*
+
+# Configuración sensible
+config/
+
+# Archivos de credenciales
+*.token.json
+*.credentials.json
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de logs y temporales
+*.log
+*.tmp
+*.swp
+
+# Archivos de datos temporales
+*.db
+*.sqlite3
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de VSCode
+.vscode/
+
+# Archivos de Jupyter
+.ipynb_checkpoints/
+
+# Otros
+jsondata/combates.json
