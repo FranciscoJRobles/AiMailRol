@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from sqlalchemy.exc import ProgrammingError
 from api.core.database import Base, engine
-import api.models.email, api.models.player, api.models.character, api.models.scene, api.models.story_state  # importa aquí todos los modelos que quieras crear
+import api.models.email, api.models.player, api.models.character, api.models.scene, api.models.story_state, api.models.turn  # importa aquí todos los modelos que quieras crear
 import threading
 from jobs.email_cron import start_email_cron  # Importa desde la raíz del proyecto
-from api.endpoints import email, player, character, scene, story_state
+from api.endpoints import email, player, character, scene, story_state, turn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,3 +27,4 @@ app.include_router(player.router)
 app.include_router(character.router)
 app.include_router(scene.router)
 app.include_router(story_state.router)
+app.include_router(turn.router)
