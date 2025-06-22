@@ -11,6 +11,6 @@ class Player(Base):
     __tablename__ = "players"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
-    nickname = Column(String(32), unique=True, nullable=False)
+    nickname = Column(String(32), nullable=False)
     fecha_registro = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     estado = Column(SAEnum(PlayerStatus), default=PlayerStatus.activo, nullable=False)
