@@ -4,7 +4,7 @@ Módulo para gestionar la conexión y procesamiento de mensajes con la IA.
 """
 
 from langchain_openai import AzureChatOpenAI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from utils.env_loader import get_env_variable
 
 class IAClient:
@@ -24,6 +24,16 @@ class IAClient:
             api_version=self.api_version,
             api_key=self.api_key
         )
+        self.contexto_inicial = None  # Guardará el SystemMessage de contexto
+
+
+    def generar_contexto_inicial(self, texto_contexto: str):
+        """
+        Genera y almacena el contexto inicial del juego como SystemMessage.
+        Este contexto se usará al inicio de la aventura para dotar de reglas, ambientación, etc.
+        """
+        self.contexto_inicial = SystemMessage(content=texto_contexto)
+
 
     def procesar_mensaje(self, mensaje: str, contexto: dict = None) -> str:
         """
@@ -43,3 +53,5 @@ class IAClient:
         mensajes.append(HumanMessage(content=mensaje))
         response = self.llm.invoke(mensajes)
         return response.content
+    
+    

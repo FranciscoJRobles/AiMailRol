@@ -1,14 +1,25 @@
 # Tarea programada para consultar emails cada 15 segundos
 import time
 from services.gmail_service import fetch_unread_emails
-from models.email import Email
+from api.models.email import Email
 from services.gmail_service import send_reply_email
 from services.combate_manager import CombateManager
 from services.gmail_service import mark_as_read
 
 combate_manager = CombateManager()
 
-def start_email_cron():
+def start_email_cron(initialGame: bool = False):
+    if initialGame:
+        # Si es el inicio de un juego, enviar mensaje inicial a todos los jugadores
+        jugadores = combate_manager.get_jugadores()
+        subject = '[COMBATE][TEST] Combate de prueba'
+        body = 'Turno 1: \n ¡Comienza el combate! Responde a este email con tu acción.'
+        email = Email(
+            subject=subject,
+            body=body,
+            recipients=jugadores
+        )
+        send_reply_email(email)
     while True:
         print("Buscando emails no leídos...")
         emails = fetch_unread_emails()
