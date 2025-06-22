@@ -7,4 +7,5 @@ class Ruleset(Base):
     nombre = Column(String, nullable=False, unique=True)
     descripcion = Column(Text, nullable=False)
     reglas_json = Column(JSON, nullable=False)
+    contexto_json = Column(JSON, nullable=False)
     activo = Column(Boolean, default=True, nullable=False)
