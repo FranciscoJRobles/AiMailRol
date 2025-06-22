@@ -1,19 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from api.core.database import SessionLocal
+from api.core.database import get_db
 from api.schemas.character import CharacterCreate, CharacterOut
 from api.managers.character_manager import CharacterManager
 from pydantic import BaseModel
 from typing import Any, Dict
 
 router = APIRouter(prefix="/characters", tags=["characters"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/", response_model=CharacterOut)
 def create_character(character: CharacterCreate, db: Session = Depends(get_db)):
@@ -27,13 +20,13 @@ def get_character(character_id: int, db: Session = Depends(get_db)):
 def list_characters(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return CharacterManager.list(db, skip, limit)
 
-@router.delete("/{character_id}", response_model=CharacterOut)
-def delete_character(character_id: int, db: Session = Depends(get_db)):
-    return CharacterManager.delete(db, character_id)
-
 @router.put("/{character_id}", response_model=CharacterOut)
 def update_character(character_id: int, character: CharacterCreate, db: Session = Depends(get_db)):
     return CharacterManager.update(db, character_id, character.model_dump())
+
+@router.delete("/{character_id}", response_model=CharacterOut)
+def delete_character(character_id: int, db: Session = Depends(get_db)):
+    return CharacterManager.delete(db, character_id)
 
 # Endpoints PATCH para modificar solo los campos hoja_json y estado_actual
 

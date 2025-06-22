@@ -9,3 +9,11 @@ DATABASE_URL = get_env_variable("DATABASE_URL", "postgresql+psycopg2://usuario:c
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+def get_db():
+    from sqlalchemy.orm import Session
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

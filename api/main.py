@@ -5,7 +5,7 @@ from api.core.database import Base, engine
 import api.models.email, api.models.player, api.models.character  # importa aquí todos los modelos que quieras crear
 import threading
 from jobs.email_cron import start_email_cron  # Importa desde la raíz del proyecto
-from api.endpoints import email, player, character
+from api.endpoints import email, player, character, scene
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,3 +25,4 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(email.router) 
 app.include_router(player.router) 
 app.include_router(character.router)
+app.include_router(scene.router)
