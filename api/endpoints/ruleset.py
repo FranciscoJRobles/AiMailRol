@@ -29,6 +29,13 @@ def update_ruleset(ruleset_id: int, ruleset_update: RulesetUpdate, db: Session =
         raise HTTPException(status_code=404, detail="Ruleset not found")
     return ruleset
 
+@router.patch("/{ruleset_id}", response_model=RulesetOut)
+def partial_update_ruleset(ruleset_id: int, ruleset_update: RulesetUpdate, db: Session = Depends(get_db)):
+    ruleset = RulesetManager.update_ruleset(db, ruleset_id, ruleset_update)
+    if not ruleset:
+        raise HTTPException(status_code=404, detail="Ruleset not found")
+    return ruleset
+
 @router.delete("/{ruleset_id}", response_model=dict)
 def delete_ruleset(ruleset_id: int, db: Session = Depends(get_db)):
     success = RulesetManager.delete_ruleset(db, ruleset_id)

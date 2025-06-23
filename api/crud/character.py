@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from api.models.character import Character
-from api.schemas.character import CharacterCreate
+from api.schemas.character import CharacterCreate, CharacterUpdate
 from fastapi import HTTPException, status
 
 def create(db: Session, character: CharacterCreate):
@@ -25,9 +25,9 @@ def delete(db: Session, character_id: int):
     db.commit()
     return character
 
-def update(db: Session, character_id: int, character_data: dict):
+def update(db: Session, character_id: int, character_data: CharacterUpdate):
     character = get(db, character_id)
-    for key, value in character_data.items():
+    for key, value in character_data.model_dump(exclude_unset=True).items():
         setattr(character, key, value)
     db.commit()
     db.refresh(character)

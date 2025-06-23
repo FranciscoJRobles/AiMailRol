@@ -5,6 +5,7 @@ from api.models.scene import SceneStatus
 from enum import Enum
 
 class SceneBase(BaseModel):
+    story_state_id: int
     titulo: str
     descripcion_larga: str
     resumen_estado: str
@@ -14,6 +15,7 @@ class SceneCreate(SceneBase):
     pass
 
 class SceneUpdate(BaseModel):
+    story_state_id: Optional[int] = None
     titulo: Optional[str] = None
     descripcion_larga: Optional[str] = None
     resumen_estado: Optional[str] = None

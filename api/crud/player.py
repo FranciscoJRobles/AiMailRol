@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from api.models.player import Player, PlayerStatus
-from api.schemas.player import PlayerCreate
+from api.schemas.player import PlayerCreate, PlayerUpdate
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 

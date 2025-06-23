@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Enum as SAEnum, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Enum as SAEnum, Boolean, func
+from sqlalchemy.orm import relationship
 from api.core.database import Base
 from enum import Enum
+from .associations import campaign_characters, story_state_characters
 
 class CharacterType(str, Enum):
     vampiro = "Vampiro"
@@ -23,3 +25,6 @@ class Character(Base):
     hoja_json = Column(JSON, nullable=False)
     estado_actual = Column(JSON, nullable=False)
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    activo = Column(Boolean, default=True, nullable=False)
+    campaigns = relationship("Campaign", secondary=campaign_characters, back_populates="characters")
+    story_states = relationship("StoryState", secondary=story_state_characters, back_populates="characters")

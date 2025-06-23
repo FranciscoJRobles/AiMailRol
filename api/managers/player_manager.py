@@ -1,5 +1,5 @@
 from api.crud import player as crud_player
-from api.schemas.player import PlayerCreate
+from api.schemas.player import PlayerCreate, PlayerUpdate
 from sqlalchemy.orm import Session
 
 class PlayerManager:

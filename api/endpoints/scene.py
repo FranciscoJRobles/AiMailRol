@@ -29,6 +29,13 @@ def update_scene(scene_id: int, scene_update: SceneUpdate, db: Session = Depends
         raise HTTPException(status_code=404, detail="Scene not found")
     return scene
 
+@router.patch("/{scene_id}", response_model=SceneResponse)
+def partial_update_scene(scene_id: int, scene_update: SceneUpdate, db: Session = Depends(get_db)):
+    scene = SceneManager.update_scene(db, scene_id, scene_update)
+    if not scene:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    return scene
+
 @router.delete("/{scene_id}", response_model=dict)
 def delete_scene(scene_id: int, db: Session = Depends(get_db)):
     success = SceneManager.delete_scene(db, scene_id)

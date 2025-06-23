@@ -1,58 +1,82 @@
-# AiMailRol
+# AiMailRol Backend
 
-Sistema de combate por email usando Gmail, desarrollado en Python.
+Backend para un sistema de rol multijugador por email, con integración de IA y arquitectura moderna basada en FastAPI y SQLAlchemy. Permite la gestión flexible de campañas, subtramas, escenas, personajes y turnos, soportando relaciones complejas y actualizaciones parciales.
 
-## Descripción
-Este proyecto permite gestionar "combates" por email entre varios jugadores, utilizando la API de Gmail. El sistema detecta respuestas de los jugadores, mantiene el hilo de conversación y solo responde automáticamente cuando todos los jugadores han contestado en la ronda actual. Soporta múltiples rondas/ciclos y es persistente mediante archivos JSON.
-
-## Características
-- Consulta automática de emails no leídos cada 15 segundos.
-- Procesamiento de emails con palabras clave específicas ([COMBATE], [TEST]).
-- Responde solo cuando todos los jugadores han respondido en la ronda actual.
-- Soporte para múltiples rondas/ciclos de respuestas.
-- Persistencia de estado en archivos JSON (`combates.json`, `jugadores.json`).
-- Gestión de jugadores desde archivo JSON.
-- Mantiene el hilo de conversación en Gmail.
-- Modular y escalable.
-- Protección ante archivos vacíos/corruptos.
-- Limpieza automática de combates inactivos.
+## Características principales
+- **FastAPI** para endpoints RESTful modernos y documentación automática.
+- **SQLAlchemy** para ORM y gestión de relaciones 1:N y M:N entre entidades.
+- **Pydantic** para validación de datos y schemas de entrada/salida.
+- **Integración con IA** para automatización y generación de contenido.
+- **Gestión de campañas, personajes, escenas, turnos, reglas y estados de historia**.
+- **Actualizaciones parciales (PATCH/PUT)** y endpoints para asociar/desasociar entidades.
+- **Separación clara de modelos, schemas, crud, managers y endpoints**.
 
 ## Estructura del proyecto
-- `main.py`: Punto de entrada. Permite iniciar el combate con argumento.
-- `services/`
-  - `gmail_service.py`: Acceso a Gmail (OAuth2, fetch, send, marcar leído).
-  - `combate_manager.py`: Lógica y persistencia de combates por rondas.
-  - `jugadores_manager.py`: Gestión de jugadores.
-- `models/`
-  - `email.py`: Modelo de email.
-- `jobs/`
-  - `email_cron.py`: Tarea periódica de consulta y procesamiento de emails.
-- `jsondata/`
-  - `combates.json`: Estado de los combates.
-  - `jugadores.json`: Lista de jugadores.
-- `config/`
-  - `credentials.json`, `token.json`: Credenciales OAuth2 de Gmail.
+```
+api/
+  main.py                # Punto de entrada FastAPI
+  core/database.py       # Configuración de la base de datos
+  models/                # Modelos SQLAlchemy (Campaign, Character, etc.)
+  models/associations.py # Tablas de asociación M:N
+  schemas/               # Schemas Pydantic (Create, Update, Out)
+  crud/                  # Lógica CRUD para cada entidad
+  managers/              # Lógica de negocio y orquestación
+  endpoints/             # Rutas y controladores FastAPI
+config/
+  credentials.json, token.json # Configuración de servicios externos
+ia/
+  ia_client.py           # Cliente para integración de IA
+jobs/
+  email_cron.py          # Tareas programadas (cron)
+services/
+  gmail_service.py, ...  # Servicios externos y utilidades
+utils/
+  env_loader.py          # Utilidades de entorno
+```
 
 ## Instalación
-1. Clona el repositorio.
-2. Crea un entorno virtual e instala las dependencias necesarias (`google-api-python-client`, `google-auth-httplib2`, `google-auth-oauthlib`, etc.).
-3. Coloca tus credenciales de Gmail en `config/credentials.json`.
-4. Configura la lista de jugadores en `jsondata/jugadores.json`.
+1. Clona el repositorio y accede al directorio:
+   ```powershell
+   git clone <repo-url>
+   cd AiMailRol
+   ```
+2. Instala las dependencias:
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. Configura las variables de entorno y archivos en `config/` según sea necesario.
 
-## Uso
-- Ejecuta `main.py` para iniciar el sistema.
-- Usa el argumento correspondiente para enviar el mensaje inicial de combate.
-- El sistema gestionará automáticamente las rondas y respuestas.
+## Ejecución
+Lanza el servidor de desarrollo con:
+```powershell
+uvicorn api.main:app --reload
+```
+Accede a la documentación interactiva en [http://localhost:8000/docs](http://localhost:8000/docs)
 
-## Notas
-- No subas archivos sensibles ni credenciales al repositorio (ver `.gitignore`).
-- El sistema es extensible para nuevas reglas de combate o integración con otras plataformas.
+## Pruebas
+Asegúrate de tener la base de datos configurada y ejecuta los tests (si existen):
+```powershell
+pytest
+```
 
-## Estado actual
-- Refactorización completada para soportar rondas/ciclos indefinidos.
-- Persistencia robusta y modularidad asegurada.
-- Listo para pruebas y mejoras de trazabilidad/logs.
+## Endpoints principales
+- `/campaigns/` — Gestión de campañas y asociación de personajes
+- `/characters/` — Gestión de personajes (sin relaciones M:N en creación)
+- `/story_states/` — Gestión de estados de historia y asociación de personajes
+- `/scenes/`, `/turns/`, `/rulesets/`, `/players/` — Gestión de otras entidades
+
+## Notas de arquitectura
+- Las relaciones M:N (ej: personajes en campañas) se gestionan desde los endpoints de Campaign y StoryState.
+- Los schemas de creación de entidades no incluyen campos de relaciones M:N.
+- Actualizaciones parciales soportadas vía PATCH/PUT.
+- Separación clara de lógica de negocio, acceso a datos y validación.
+
+## TODO
+- Mejorar documentación de endpoints y ejemplos de uso.
+- Añadir pruebas automáticas y validación exhaustiva.
+- Revisar y adaptar lógica de migraciones si es necesario.
 
 ---
-
-¿Dudas o sugerencias? ¡Abre un issue o contacta al autor!
+Desarrollado por Francisco Javier Robles de Toro.

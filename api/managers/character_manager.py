@@ -1,5 +1,5 @@
 from api.crud import character as crud_character
-from api.schemas.character import CharacterCreate
+from api.schemas.character import CharacterCreate, CharacterUpdate
 from sqlalchemy.orm import Session
 from api.models.character import Character
 

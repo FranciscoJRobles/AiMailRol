@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, ForeignKey
 from api.core.database import Base
 
 class Ruleset(Base):
@@ -9,3 +9,4 @@ class Ruleset(Base):
     reglas_json = Column(JSON, nullable=False)
     contexto_json = Column(JSON, nullable=False)
     activo = Column(Boolean, default=True, nullable=False)
+    campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=True, index=True)

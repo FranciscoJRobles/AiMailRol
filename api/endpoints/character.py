@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from api.core.database import get_db
-from api.schemas.character import CharacterCreate, CharacterOut
+from api.schemas.character import CharacterCreate, CharacterOut, CharacterUpdate
 from api.managers.character_manager import CharacterManager
 from pydantic import BaseModel
 from typing import Any, Dict
@@ -21,8 +21,12 @@ def list_characters(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
     return CharacterManager.list(db, skip, limit)
 
 @router.put("/{character_id}", response_model=CharacterOut)
-def update_character(character_id: int, character: CharacterCreate, db: Session = Depends(get_db)):
-    return CharacterManager.update(db, character_id, character.model_dump())
+def update_character(character_id: int, character: CharacterUpdate, db: Session = Depends(get_db)):
+    return CharacterManager.update(db, character_id, character.model_dump(exclude_unset=True))
+
+@router.patch("/{character_id}", response_model=CharacterOut)
+def partial_update_character(character_id: int, character: CharacterUpdate, db: Session = Depends(get_db)):
+    return CharacterManager.update(db, character_id, character.model_dump(exclude_unset=True))
 
 @router.delete("/{character_id}", response_model=CharacterOut)
 def delete_character(character_id: int, db: Session = Depends(get_db)):

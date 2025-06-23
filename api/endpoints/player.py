@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.core.database import get_db
-from api.schemas.player import PlayerCreate, PlayerOut
+from api.schemas.player import PlayerCreate, PlayerOut, PlayerUpdate
 from api.managers.player_manager import PlayerManager
 
 router = APIRouter(prefix="/players", tags=["players"])
@@ -19,8 +19,12 @@ def list_players(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
     return PlayerManager.list(db, skip, limit)
 
 @router.put("/{player_id}", response_model=PlayerOut)
-def update_player(player_id: int, player: PlayerCreate, db: Session = Depends(get_db)):
-    return PlayerManager.update(db, player_id, player.model_dump())
+def update_player(player_id: int, player: PlayerUpdate, db: Session = Depends(get_db)):
+    return PlayerManager.update(db, player_id, player.model_dump(exclude_unset=True))
+
+@router.patch("/{player_id}", response_model=PlayerOut)
+def partial_update_player(player_id: int, player: PlayerUpdate, db: Session = Depends(get_db)):
+    return PlayerManager.update(db, player_id, player.model_dump(exclude_unset=True))
 
 @router.delete("/{player_id}", response_model=PlayerOut)
 def delete_player(player_id: int, db: Session = Depends(get_db)):

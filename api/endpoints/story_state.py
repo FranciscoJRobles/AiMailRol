@@ -29,6 +29,16 @@ def update_story_state(story_state_id: int, story_state_update: StoryStateUpdate
         raise HTTPException(status_code=404, detail="StoryState not found")
     return story_state
 
+@router.patch("/{story_state_id}", response_model=StoryStateOut)
+def partial_update_story_state(story_state_id: int, story_state_update: StoryStateUpdate, db: Session = Depends(get_db)):
+    try:
+        story_state = StoryStateManager.update_story_state(db, story_state_id, story_state_update)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not story_state:
+        raise HTTPException(status_code=404, detail="StoryState not found")
+    return story_state
+
 @router.delete("/{story_state_id}", response_model=dict)
 def delete_story_state(story_state_id: int, db: Session = Depends(get_db)):
     success = StoryStateManager.delete_story_state(db, story_state_id)

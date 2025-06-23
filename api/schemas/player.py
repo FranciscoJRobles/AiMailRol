@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
+from typing import Optional
 from api.models.player import PlayerStatus
 
 
@@ -10,6 +11,11 @@ class PlayerBase(BaseModel):
     
 class PlayerCreate(PlayerBase):
     pass
+
+class PlayerUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    nickname: Optional[str] = None
+    estado: Optional[PlayerStatus] = None
 
 class PlayerOut(PlayerBase):
     id: int
