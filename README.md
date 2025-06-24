@@ -73,6 +73,12 @@ pytest
 - Actualizaciones parciales soportadas vía PATCH/PUT.
 - Separación clara de lógica de negocio, acceso a datos y validación.
 
+## Linea lógica de creación de datos
+- Crea el/los jugador/es(players)
+- Crea el/los personaje/s(characters) y añade en formato json la hoja de personaje (hoja_json) y el estado actual (estado_actual)
+- Crea la campaña y asocia los personajes a la campaña
+- Crea las reglas (rulesets) y asocialas a la campaña. Luego añade los json reglas_json y contexto_json.
+
 ## TODO
 - Mejorar documentación de endpoints y ejemplos de uso.
 - Añadir pruebas automáticas y validación exhaustiva.

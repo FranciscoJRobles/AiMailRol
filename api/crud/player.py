@@ -37,3 +37,10 @@ def update(db: Session, player_id: int, player_data: dict):
     db.commit()
     db.refresh(player)
     return player
+
+def get_player_id_by_email(db, email: str):
+    """
+    Devuelve el player_id a partir del email del jugador.
+    """
+    player = db.query(Player).filter(Player.email == email).first()
+    return player.id if player else None

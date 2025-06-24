@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ARRAY, DateTime, func, Enum as SAEnum
+from sqlalchemy import Column, Integer, String, Boolean, ARRAY, DateTime, func, Enum as SAEnum, ForeignKey
 from api.core.database import Base
 from enum import Enum
 
@@ -12,6 +12,7 @@ class Email(Base):
     id = Column(Integer, primary_key=True, index=True)
     player_id = Column(Integer, index=True)
     character_id = Column(Integer, index=True)
+    campaign_id = Column(Integer, ForeignKey('campaigns.id'), index=True, nullable=True)  # Nuevo campo para asociar campaña
     type = Column(SAEnum(EmailType), nullable=False, index=True)  # Ahora usa Enum SQLAlchemy
     subject = Column(String, nullable=False)
     body = Column(String)

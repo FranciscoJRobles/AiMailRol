@@ -28,3 +28,10 @@ class CampaignCRUD:
     @staticmethod
     def get_campaign_story_states(db: Session, campaign_id: int):
         return db.query(StoryState).filter(StoryState.campaign_id == campaign_id).all()
+
+    @staticmethod
+    def get_active_campaign_keywords(db: Session):
+        """
+        Devuelve una lista de todas las palabras clave (nombre_clave) de campañas activas.
+        """
+        return [c.nombre_clave for c in db.query(Campaign).filter(Campaign.activa == True).all()]

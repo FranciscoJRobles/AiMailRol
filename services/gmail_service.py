@@ -9,6 +9,16 @@ from email.utils import COMMASPACE
 import base64
 import re
 import os
+from api.core.database import SessionLocal
+from api.crud.campaign import CampaignCRUD
+from api.crud.email import create_email
+from api.schemas.email import EmailCreate
+from api.models.email import EmailType
+from api.models.player import Player
+from api.models.character import Character
+from api.models.associations import campaign_characters
+from api.crud.character import get_character_id_by_player_and_campaign
+from api.crud.player import get_player_id_by_email
 
 # Variables globales para configuración y autenticación
 SCOPES = get_env_variable("GMAIL_SCOPES").split(",")
@@ -52,6 +62,66 @@ def fetch_unread_emails() -> List[Dict[str, str]]:
                     break
         emails.append({'subject': subject, 'body': body, 'sender': sender, 'recipients': recipients, 'thread_id': thread_id, 'id': msg['id'], 'message_id': message_id})
     return emails
+
+
+def fetch_unread_emails_grouped_by_keyword() -> dict:
+    """
+    Obtiene los emails no leídos de Gmail agrupados por palabra clave de campañas activas.
+    Guarda cada email en la tabla Email y lo marca como leído.
+    Devuelve un diccionario: {palabra_clave: [emails]}
+    """
+    db = SessionLocal()
+    # Recupera todas las campañas activas y crea un diccionario {nombre_clave: id}
+    campaigns = db.query(CampaignCRUD.__annotations__['Campaign']).filter(CampaignCRUD.__annotations__['Campaign'].activa == True).all()
+    keyword_to_id = {c.nombre_clave: c.id for c in campaigns}
+    keywords = list(keyword_to_id.keys())
+    service = get_gmail_service()
+    emails_by_keyword = {k: [] for k in keywords}
+    results = service.users().messages().list(userId='me', labelIds=['UNREAD']).execute()
+    messages = results.get('messages', [])
+    for msg in messages:
+        msg_data = service.users().messages().get(userId='me', id=msg['id']).execute()
+        headers = msg_data['payload']['headers']
+        subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '')
+        for keyword in keywords:
+            if keyword in subject:
+                sender = next((h['value'] for h in headers if h['name'] == 'From'), '')
+                recipients = [h['value'] for h in headers if h['name'] in ['To', 'Cc', 'Bcc']]
+                thread_id = msg_data.get('threadId', '')
+                message_id = next((h['value'] for h in headers if h['name'].lower() == 'message-id'), '')
+                body = ''
+                if 'data' in msg_data['payload']['body']:
+                    body = base64.urlsafe_b64decode(msg_data['payload']['body']['data']).decode('utf-8')
+                else:
+                    for part in msg_data['payload'].get('parts', []):
+                        if part['mimeType'] == 'text/plain' and 'data' in part['body']:
+                            body = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
+                            break
+                # Buscar player_id por email (sender)
+                player_id = get_player_id_by_email(db, sender)
+                campaign_id = keyword_to_id[keyword]
+                # Buscar character_id del personaje de ese jugador en esa campaña usando el método del crud
+                character_id = get_character_id_by_player_and_campaign(db, player_id, campaign_id) if player_id is not None else None
+                # Guardar en la tabla Email con campaign_id, player_id y character_id
+                email_obj = EmailCreate(
+                    player_id=player_id,
+                    character_id=character_id,
+                    campaign_id=campaign_id,
+                    type=EmailType.ENTRADA,
+                    subject=subject,
+                    body=body,
+                    sender=sender,
+                    recipients=recipients,
+                    thread_id=thread_id,
+                    message_id=message_id,
+                    processed=False
+                )
+                create_email(db, email_obj)
+                mark_as_read(msg['id'])
+                emails_by_keyword[keyword].append({'subject': subject, 'body': body, 'sender': sender, 'recipients': recipients, 'thread_id': thread_id, 'id': msg['id'], 'message_id': message_id, 'player_id': player_id, 'character_id': character_id})
+                break
+    db.close()
+    return emails_by_keyword
 
 
 def send_reply_email(email):
