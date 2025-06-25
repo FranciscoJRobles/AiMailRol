@@ -19,8 +19,8 @@ class OrquestadorIA:
         self.subtrama_manager = AgenteSubtramaManager()
         self.generador_respuesta = AgenteGeneradorRespuesta()
 
-    def procesar_email(self, email):
-        datos_email = self.procesador_email.analizar(email)
+    def procesar_email(self, email, lista_personajes_pj=None):
+        datos_email = self.procesador_email.analizar(email, lista_personajes_pj)
         contexto = self.contexto_historia.obtener_contexto(datos_email)
         reglas = self.reglas.consultar(contexto)
         pnj_acciones = self.pnj_manager.gestionar(contexto)

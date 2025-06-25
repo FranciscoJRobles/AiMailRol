@@ -1,12 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Enum as SAEnum, func, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, func, ForeignKey
 from sqlalchemy.orm import relationship
 from api.core.database import Base
-from enum import Enum
-
-class SceneStatus(str, Enum):
-    activa = "activa"
-    finalizada = "finalizada"
-    pausada = "pausada"
 
 class Scene(Base):
     __tablename__ = "scenes"
@@ -17,6 +11,6 @@ class Scene(Base):
     resumen_estado = Column(Text, nullable=False)
     fecha_inicio = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     fecha_cierre = Column(DateTime(timezone=True), nullable=True)
-    estado = Column(SAEnum(SceneStatus), nullable=False, index=True)
+    activa = Column(Boolean, default=True, nullable=False)  # Escena activa o no
     turns = relationship("Turn", back_populates="scene")
     story_state = relationship("StoryState", back_populates="scenes")

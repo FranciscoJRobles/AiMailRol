@@ -8,6 +8,7 @@ class StoryStateBase(BaseModel):
     descripcion: Optional[str] = None
     contenido_resumido: Optional[str] = None
     tokens_est: Optional[int] = None
+    activa: bool = True  # Nuevo campo para indicar si la story state está activa
     character_ids: Optional[List[int]] = None  # IDs de personajes asociados
     scene_ids: Optional[List[int]] = None      # IDs de escenas asociadas
 
@@ -19,6 +20,7 @@ class StoryStateUpdate(BaseModel):
     descripcion: Optional[str] = None
     contenido_resumido: Optional[str] = None
     tokens_est: Optional[int] = None
+    activa: Optional[bool] = None
     character_ids: Optional[List[int]] = None
     scene_ids: Optional[List[int]] = None
 

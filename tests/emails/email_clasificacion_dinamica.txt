@@ -1,0 +1,1 @@
+Teniendo en cuenta que el guardia, si me descubre, va a dar la voz de alarma, cuando esté mirando en dirección contraria inicio un conflicto con él.

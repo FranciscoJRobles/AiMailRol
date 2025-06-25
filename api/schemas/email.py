@@ -6,6 +6,8 @@ from api.models.email import EmailType
 class EmailBase(BaseModel):
     player_id: int
     character_id: int
+    campaign_id: Optional[int] = None
+    scene_id: Optional[int] = None  # Nuevo campo para asociar escena
     type: EmailType
     subject: str
     body: str

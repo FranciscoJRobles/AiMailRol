@@ -35,3 +35,13 @@ class CampaignCRUD:
         Devuelve una lista de todas las palabras clave (nombre_clave) de campañas activas.
         """
         return [c.nombre_clave for c in db.query(Campaign).filter(Campaign.activa == True).all()]
+
+    @staticmethod
+    def get_characters_by_campaign_id(db: Session, campaign_id: int):
+        """
+        Devuelve una lista con los nombres de los personajes asociados a una campaña.
+        """
+        campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+        if campaign and campaign.characters:
+            return [character.nombre for character in campaign.characters]
+        return []

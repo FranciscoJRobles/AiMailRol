@@ -6,6 +6,8 @@ Módulo para gestionar la conexión y procesamiento de mensajes con la IA.
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from utils.env_loader import get_env_variable
+from utils.utils import clean_json_response
+from enum import Enum
 
 class IAClient:
     # Perfiles de configuración para la IA
@@ -29,8 +31,21 @@ class IAClient:
             "temperature": 0.3,
             "top_p": 0.8,
             "max_tokens": 2048
+        },
+        "clasificacion": {
+            "temperature": 0.1,
+            "top_p": 0.6,
+            "max_tokens": 512
         }
     }
+    
+    class PerfilesEnum(str,Enum):
+        CREATIVA = "creativa"
+        PRECISA = "precisa"
+        NEUTRAL = "neutral"
+        RESUMEN = "resumen"
+        CLASIFICACION = "clasificacion"
+    
 
     def __init__(self, config=None, perfil: str = "creativa"):
         """
@@ -97,12 +112,11 @@ class IAClient:
         # Ejemplo de contexto: puedes pasar un historial de mensajes o instrucciones de sistema
         if contexto:
             if "sistema" in contexto:
-                mensajes.append(HumanMessage(role="system", content=contexto["sistema"]))
+                mensajes.append(SystemMessage(content=contexto["sistema"]))
             if "historial" in contexto:
                 for msg in contexto["historial"]:
                     mensajes.append(HumanMessage(content=msg))
         mensajes.append(HumanMessage(content=mensaje))
         response = self.llm.invoke(mensajes)
-        return response.content
-
+        return clean_json_response(response.content)
 

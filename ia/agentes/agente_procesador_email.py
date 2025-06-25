@@ -1,25 +1,39 @@
 import re
-
+from ia.agentes.subagentes.subagente_intencion_mensaje_email import SubagenteClasificacionIntencionEmailIA
+from api.models.email import Email
+from sqlalchemy.orm import Session
 
 class AgenteProcesadorEmail:
-    def analizar(self, email):
+    def __init__(self, db: Session = None):
+        self.ia_subagenteclasificacionIntencion = SubagenteClasificacionIntencionEmailIA()
+        self.db = db
+
+    def analizar(self, email, lista_personajes_pj=None):
+        texto = email.body if hasattr(email, 'body') else ''
+
+        # IA: obtener todas las intenciones del texto completo
+        ia_intenciones = self.ia_subagenteclasificacionIntencion.analizar(texto, lista_personajes_pj)
+        
+        return { "intenciones" :ia_intenciones}
+
+    def obtener_emails_no_procesados(self, scene_id):
         """
-        Analiza el email y extrae la intención y entidades principales.
-        Retorna un diccionario con la estructura:
-        {
-            'intencion': str,  # p.ej. 'accion', 'consulta', 'respuesta', 'otro'
-            'entidades': dict, # p.ej. {'accion': 'atacar', 'objetivo': 'vampiro'}
-        }
+        Devuelve los emails de la escena con processed=False.
         """
-        body = email.body.lower() if hasattr(email, 'body') else ''
-        subject = email.subject.lower() if hasattr(email, 'subject') else ''
-        texto = subject + ' ' + body
-        # Ejemplo simple: detección por palabras clave
-        if any(palabra in texto for palabra in ['ataco', 'atacar', 'ataque']):
-            return {'intencion': 'accion', 'entidades': {'accion': 'atacar'}}
-        elif any(palabra in texto for palabra in ['estado', 'cómo estoy', 'mi vida']):
-            return {'intencion': 'consulta', 'entidades': {'tipo': 'estado'}}
-        elif any(palabra in texto for palabra in ['respondo', 'contesto']):
-            return {'intencion': 'respuesta', 'entidades': {}}
-        else:
-            return {'intencion': 'otro', 'entidades': {}}
+        return self.db.query(Email).filter(Email.scene_id == scene_id, Email.processed == False).order_by(Email.date.asc()).all()
+
+    def gestionar_emails_para_contexto(self, scene_id, max_emails=10):
+        """
+        Si hay menos de max_emails emails no procesados, devuelve sus bodies.
+        Si hay max_emails o más, devuelve la lista de bodies y una bandera para resumir.
+        """
+        emails = self.obtener_emails_no_procesados(scene_id)
+        bodies = [email.body for email in emails]
+        if len(bodies) >= max_emails:
+            return bodies, True, emails  # True indica que hay que resumir
+        return bodies, False, emails
+
+    def marcar_emails_como_procesados(self, emails):
+        for email in emails:
+            email.processed = True
+        self.db.commit()

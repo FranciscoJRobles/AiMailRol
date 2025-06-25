@@ -1,0 +1,12 @@
+
+Avanzo por el pasillo del edificio en sigilo. Soy un hombre perseguido por lo que si detecto o escucho a alguien en las inmediaciones, intentaría esconderme hasta que se fueran.
+
+Si nadie me detecta, seguiré avanzando hasta la última puerta del pasillo, donde vive Martin, mi aliado. Le toco a la puerta y si me responde le digo a Martin: Abreme la puerta por favor, no tengo tiempo y me persiguen.
+
+Si alguien me detecta en el camino tendría que olvidarme de llegar hasta la puerta de Martin, puesto que lo pondría en peligro, y buscaría una via para escapar del edificio, quizás por las escaleras auxiliares.
+ 
+Si consigo escapar llamaría por teléfono a Darkcon.
+
+llamo por radio a Juan y le digo: ya he escapado.
+
+master: ¿sería posible usar ofuscación antes de que me detectaran, llegado el caso?

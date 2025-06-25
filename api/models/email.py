@@ -13,6 +13,7 @@ class Email(Base):
     player_id = Column(Integer, index=True)
     character_id = Column(Integer, index=True)
     campaign_id = Column(Integer, ForeignKey('campaigns.id'), index=True, nullable=True)  # Nuevo campo para asociar campaña
+    scene_id = Column(Integer, ForeignKey('scenes.id'), index=True, nullable=True)  # Nuevo campo para asociar escena
     type = Column(SAEnum(EmailType), nullable=False, index=True)  # Ahora usa Enum SQLAlchemy
     subject = Column(String, nullable=False)
     body = Column(String)
