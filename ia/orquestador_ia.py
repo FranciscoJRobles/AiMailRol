@@ -20,17 +20,9 @@ class OrquestadorIA:
         self.subtrama_manager = AgenteSubtramaManager()
         self.generador_respuesta = AgenteGeneradorRespuesta()
 
-    def emails_cron():
-        """
-        Método para iniciar el cron de emails.
-        Aquí se puede implementar la lógica para consultar la tabla Emails periódicamente.
-        """
-        # Implementar lógica de cron aquí, si es necesario
-        
-        pass
-    
 
     def procesar_email(self, email, lista_personajes_pj=None):
+        ## TODO: Habría que definir una estrategia para iniciar leyendo los emails siguiendo el flujo de langchain/langgraph
         datos_email = self.procesador_email.analizar(email, lista_personajes_pj)
         contexto = self.contexto_historia.obtener_contexto(datos_email)
         reglas = self.reglas.consultar(contexto)

@@ -4,7 +4,7 @@ from api.managers.email_manager import EmailManager
 from api.models.email import Email
 from sqlalchemy.orm import Session
 
-class AgenteEmailEmail:
+class AgenteAnalizadorEmail:
     def __init__(self, db: Session = None):
         self.email = EmailManager().get_next_email(db) if db else None
         self.ia_subagenteAnalisisEmailIA = SubagenteAnalisisEmailIA()
