@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, Boolean, func
 from sqlalchemy.orm import relationship
 from api.core.database import Base
 from .associations import story_state_characters
@@ -12,6 +12,8 @@ class StoryState(Base):
     contenido_resumido = Column(Text, nullable=True)
     tokens_est = Column(Integer, nullable=True)
     fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    activa = Column(Boolean, nullable=False, default=True) 
+    nombre_clave = Column(Text, nullable=False, unique=True, index=True)  # Unique keyword for StoryState
     characters = relationship("Character", secondary=story_state_characters, back_populates="story_states")
     scenes = relationship("Scene", back_populates="story_state")
     campaign = relationship("Campaign", back_populates="story_states")

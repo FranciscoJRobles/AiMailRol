@@ -1,34 +1,55 @@
-from api.crud.email import create_email, get_email, get_emails, delete_email, update_email
+from sqlalchemy.orm import Session
+from api.models.email import Email
 from api.schemas.email import EmailCreate, EmailOut
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
 
 class EmailManager:
     @staticmethod
     def create(db: Session, email: EmailCreate):
-        return create_email(db, email)
+        """Crea un nuevo email"""
+        db_email = Email(**email.model_dump())
+        db.add(db_email)
+        db.commit()
+        db.refresh(db_email)
+        return db_email
 
     @staticmethod
     def get(db: Session, email_id: int):
-        email = get_email(db, email_id)
+        """Obtiene un email por ID"""
+        email = db.query(Email).filter(Email.id == email_id).first()
         if not email:
             raise HTTPException(status_code=404, detail="Email not found")
         return email
 
     @staticmethod
     def list(db: Session, skip: int = 0, limit: int = 100):
-        return get_emails(db, skip, limit)
+        """Lista todos los emails con paginación"""
+        return db.query(Email).offset(skip).limit(limit).all()
 
     @staticmethod
     def delete(db: Session, email_id: int):
-        email = delete_email(db, email_id)
-        if not email:
+        """Elimina un email"""
+        db_email = db.query(Email).filter(Email.id == email_id).first()
+        if not db_email:
             raise HTTPException(status_code=404, detail="Email not found")
-        return email
+        db.delete(db_email)
+        db.commit()
+        return db_email
 
     @staticmethod
     def update(db: Session, email_id: int, email_data: dict):
-        email = update_email(db, email_id, email_data)
-        if not email:
+        """Actualiza un email"""
+        db_email = db.query(Email).filter(Email.id == email_id).first()
+        if not db_email:
             raise HTTPException(status_code=404, detail="Email not found")
-        return email
+        for key, value in email_data.items():
+            setattr(db_email, key, value)
+        db.commit()
+        db.refresh(db_email)
+        return db_email
+
+    @staticmethod
+    def get_next_email(db: Session) -> Email:
+        """Devuelve el email no procesado más antiguo"""
+        return db.query(Email).filter(Email.processed == False).order_by(Email.date.asc()).first()
+

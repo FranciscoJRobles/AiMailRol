@@ -2,6 +2,9 @@
 
 Este documento recopila buenas prácticas y ejemplos para que los jugadores humanos puedan comunicarse de forma clara y efectiva con la IA durante la partida. Seguir estos consejos ayuda a que la IA entienda mejor tus intenciones y agiliza el desarrollo de la historia.
 
+### x. Asunto del mensaje
+  - El asunto del mensaje tendrá una estructura del tipo [NOMBRE_CLAVE_CAMPAÑA](NOMBRE_CLAVE_HISTORIA) Investigando el edificioe 
+
 ## 1. Separa tus intenciones en párrafos
 - Si vas a realizar varias acciones, diálogos o consultas en un mismo email, sepáralas en párrafos distintos a ser posible (doble salto de línea).
 

@@ -1,26 +1,59 @@
 from sqlalchemy.orm import Session
+from api.models.scene import Scene, SceneStatus
 from api.schemas.scene import SceneCreate, SceneUpdate
-from api.crud import scene as crud_scene
 from typing import List, Optional
-from api.models.scene import Scene as SceneModel
+from datetime import datetime, timezone
 
 class SceneManager:
     @staticmethod
-    def get_scene(db: Session, scene_id: int) -> Optional[SceneModel]:
-        return crud_scene.get_scene(db, scene_id)
+    def get_scene(db: Session, scene_id: int) -> Optional[Scene]:
+        """Obtiene una escena por ID"""
+        return db.query(Scene).filter(Scene.id == scene_id).first()
 
     @staticmethod
-    def get_scenes(db: Session, skip: int = 0, limit: int = 100) -> List[SceneModel]:
-        return crud_scene.get_scenes(db, skip, limit)
+    def get_scene_by_id(db: Session, scene_id: int):
+        """Devuelve la escena correspondiente al id"""
+        return db.query(Scene).filter(Scene.id == scene_id).first()
 
     @staticmethod
-    def create_scene(db: Session, scene: SceneCreate) -> SceneModel:
-        return crud_scene.create_scene(db, scene)
+    def get_scenes(db: Session, skip: int = 0, limit: int = 100) -> List[Scene]:
+        """Lista todas las escenas con paginación"""
+        return db.query(Scene).offset(skip).limit(limit).all()
 
     @staticmethod
-    def update_scene(db: Session, scene_id: int, scene_update: SceneUpdate) -> Optional[SceneModel]:
-        return crud_scene.update_scene(db, scene_id, scene_update)
+    def create_scene(db: Session, scene: SceneCreate) -> Scene:
+        """Crea una nueva escena"""
+        db_scene = Scene(**scene.model_dump())
+        db.add(db_scene)
+        db.commit()
+        db.refresh(db_scene)
+        return db_scene
+
+    @staticmethod
+    def update_scene(db: Session, scene_id: int, scene_update: SceneUpdate) -> Optional[Scene]:
+        """Actualiza una escena"""
+        db_scene = SceneManager.get_scene(db, scene_id)
+        if not db_scene:
+            return None
+        for field, value in scene_update.model_dump(exclude_unset=True).items():
+            setattr(db_scene, field, value)
+        if scene_update.estado == SceneStatus.finalizada and not db_scene.fecha_cierre:
+            db_scene.fecha_cierre = datetime.now(tz=timezone.utc)
+        db.commit()
+        db.refresh(db_scene)
+        return db_scene
 
     @staticmethod
     def delete_scene(db: Session, scene_id: int) -> bool:
-        return crud_scene.delete_scene(db, scene_id)
+        """Elimina una escena"""
+        db_scene = SceneManager.get_scene(db, scene_id)
+        if not db_scene:
+            return False
+        db.delete(db_scene)
+        db.commit()
+        return True
+
+    @staticmethod
+    def get_active_scene_by_story_state(db: Session, story_state_id: int) -> Optional[Scene]:
+        """Obtiene la escena activa por story_state_id"""
+        return db.query(Scene).filter(Scene.story_state_id == story_state_id, Scene.activa == True).first()

@@ -4,6 +4,11 @@ from api.models.scene import Scene
 from api.models.story_state import StoryState
 from api.models.campaign import Campaign
 from api.models.ruleset import Ruleset
+from api.models.character import Character
+from api.crud.character import get_personajes_por_escena
+from api.crud.scene import get_scene_by_id
+from api.crud.story_state import get_story_state_by_id
+from api.crud.campaign import get_campaign_by_id
 
 class SubagenteRecopiladorContexto:
     def __init__(self, db: Session, resumidor_textos=None):
@@ -16,10 +21,9 @@ class SubagenteRecopiladorContexto:
         # 1. Emails recientes o resumen
         bodies_a_resumir, bodies_puros, emails_a_resumir, emails_puros, hay_que_resumir = self.gestor_emails.gestionar_emails_para_contexto(scene_id, max_emails, n_puros)
         contexto['emails_puros'] = bodies_puros
-        contexto['hay_que_resumir'] = hay_que_resumir
-        contexto['emails_a_resumir'] = bodies_a_resumir
+        # Solo usamos bodies_a_resumir y hay_que_resumir como variables locales
         # 2. Escena
-        scene = self.db.query(Scene).filter(Scene.id == scene_id).first()
+        scene = get_scene_by_id(self.db, scene_id)
         resumen_final = scene.resumen_estado if scene else ''
         if hay_que_resumir and bodies_a_resumir and self.resumidor_textos:
             # Generar resumen de los emails antiguos y combinarlo con el resumen existente
@@ -36,7 +40,7 @@ class SubagenteRecopiladorContexto:
                 'activa': scene.activa
             }
             # 3. StoryState
-            story_state = self.db.query(StoryState).filter(StoryState.id == scene.story_state_id).first()
+            story_state = get_story_state_by_id(self.db, scene.story_state_id) if scene.story_state_id else None
             if story_state:
                 contexto['story_state'] = {
                     'nombre': story_state.nombre,
@@ -45,7 +49,7 @@ class SubagenteRecopiladorContexto:
                     'activa': story_state.activa
                 }
                 # 4. Campaign
-                campaign = self.db.query(Campaign).filter(Campaign.id == story_state.campaign_id).first()
+                campaign = get_campaign_by_id(self.db, story_state.campaign_id) if story_state.campaign_id else None
                 if campaign:
                     contexto['campaign'] = {
                         'nombre': campaign.nombre,
@@ -53,6 +57,15 @@ class SubagenteRecopiladorContexto:
                         'resumen': campaign.resumen,
                         'activa': campaign.activa
                     }
+            # 5. Personajes involucrados en la escena
+            personajes = get_personajes_por_escena(self.db, scene_id)
+            contexto['personajes'] = []
+            for personaje in personajes:
+                contexto['personajes'].append({
+                    'nombre': personaje.nombre,
+                    'ficha': personaje.ficha_json if hasattr(personaje, 'ficha_json') else {},
+                    'estado_actual': personaje.estado_actual_json if hasattr(personaje, 'estado_actual_json') else {}
+                })
         return contexto
 
     def obtener_contexto_ambientacion(self, campaign_id):

@@ -22,7 +22,8 @@ class Email(Base):
     thread_id = Column(String, nullable=False, default="")
     message_id = Column(String, nullable=False, default="")
     date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    processed = Column(Boolean, nullable=False, default=False)
+    processed = Column(Boolean, nullable=False, default=False) #indica si el email fue procesado por el agente
+    resumido = Column(Boolean, nullable=False, default=False)  # Indica si el email fue utilizado para generar un resumen
 
     def set_type(self, value):
         if isinstance(value, EmailType):

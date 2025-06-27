@@ -10,16 +10,16 @@ Backend para un sistema de rol multijugador por email, con integración de IA y 
 - **Procesamiento inteligente de emails de rol**: segmentación y clasificación de intenciones usando IA.
 - **Gestión de campañas, personajes, escenas, turnos, reglas y estados de historia**.
 - **Actualizaciones parciales (PATCH/PUT)** y endpoints para asociar/desasociar entidades.
-- **Separación clara de modelos, schemas, crud, managers y endpoints**.
+- **Separación clara de modelos, schemas, managers y endpoints**.
 
 ## Novedades recientes
 
+- **Eliminación de la capa CRUD**:  
+  Toda la lógica de negocio y acceso a datos se ha consolidado en los Managers, simplificando la arquitectura y reduciendo redundancias.
 - **Clasificación de intenciones centralizada**:  
   La lista de intenciones posibles para emails de rol se encuentra en `ia/constantes/intenciones.py`, lo que garantiza coherencia en toda la aplicación (IA, tests, validaciones).
 - **Subagente de IA mejorado**:  
   El subagente principal para analizar emails (`SubagenteIntencionEmailIA`) utiliza un prompt mejorado y el perfil de IA `"clasificacion"` (temperature y top_p bajos) para respuestas más precisas y segmentadas.
-- **Eliminación de subagentes estrictos**:  
-  El flujo principal ahora depende solo de la IA para la clasificación de intenciones, eliminando la dependencia de subagentes de reglas estrictas.
 - **Fallback robusto**:  
   Si la IA no detecta ninguna intención en un bloque, se clasifica automáticamente como `'otro'`, garantizando que siempre haya una intención en la respuesta.
 - **Tests adaptados**:  
@@ -37,7 +37,6 @@ api/
   models/                # Modelos SQLAlchemy (Campaign, Character, etc.)
   models/associations.py # Tablas de asociación M:N
   schemas/               # Schemas Pydantic (Create, Update, Out)
-  crud/                  # Lógica CRUD para cada entidad
   managers/              # Lógica de negocio y orquestación
   endpoints/             # Rutas y controladores FastAPI
 config/
