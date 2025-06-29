@@ -4,6 +4,7 @@ from api.schemas.player import PlayerCreate, PlayerUpdate
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from typing import Optional
+from email.utils import parseaddr
 
 class PlayerManager:
     @staticmethod
@@ -53,5 +54,7 @@ class PlayerManager:
     @staticmethod
     def get_current_player_id_by_email(db: Session, email: str) -> Optional[int]:
         """Devuelve el ID del jugador actual asociado a un email"""
-        player = db.query(Player).filter(Player.email == email).first()
+        # Extraer solo la dirección de correo electrónico
+        email_address = parseaddr(email)[1]
+        player = db.query(Player).filter(Player.email == email_address).first()
         return player.id if player else None

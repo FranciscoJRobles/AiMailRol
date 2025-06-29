@@ -1,8 +1,8 @@
-from sqlalchemy.orm import Session
-from api.models.scene import Scene, SceneStatus
-from api.schemas.scene import SceneCreate, SceneUpdate
 from typing import List, Optional
 from datetime import datetime, timezone
+from sqlalchemy.orm import Session
+from api.schemas.scene import SceneCreate, SceneUpdate
+from api.models.scene import Scene
 
 class SceneManager:
     @staticmethod
@@ -37,7 +37,7 @@ class SceneManager:
             return None
         for field, value in scene_update.model_dump(exclude_unset=True).items():
             setattr(db_scene, field, value)
-        if scene_update.estado == SceneStatus.finalizada and not db_scene.fecha_cierre:
+        if scene_update.activa == False and not db_scene.fecha_cierre:
             db_scene.fecha_cierre = datetime.now(tz=timezone.utc)
         db.commit()
         db.refresh(db_scene)
@@ -57,3 +57,8 @@ class SceneManager:
     def get_active_scene_by_story_state(db: Session, story_state_id: int) -> Optional[Scene]:
         """Obtiene la escena activa por story_state_id"""
         return db.query(Scene).filter(Scene.story_state_id == story_state_id, Scene.activa == True).first()
+
+    @staticmethod
+    def get_actual_phase_by_scene_id(db: Session, scene_id: int) -> Optional[str]:
+        """Obtiene la fase actual de una escena por ID"""
+        return db.query(Scene.fase_actual).filter(Scene.id == scene_id).scalar()

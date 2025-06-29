@@ -33,7 +33,11 @@ def start_email_db_processor(intervalo_segundos=5):
             if resultado.get('success'):
                 emails_procesados = resultado.get('emails_procesados', 0)
                 emails_exitosos = resultado.get('emails_exitosos', 0)
-                print(f"Procesamiento completado: {emails_exitosos}/{emails_procesados} emails exitosos")
+                
+                if emails_procesados == 0:
+                    print("No había emails pendientes para procesar")
+                else:
+                    print(f"Procesamiento completado: {emails_exitosos}/{emails_procesados} emails exitosos")
                 
                 if resultado.get('errores'):
                     print(f"Errores encontrados: {len(resultado['errores'])}")

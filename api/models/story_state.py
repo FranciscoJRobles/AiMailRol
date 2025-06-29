@@ -9,7 +9,7 @@ class StoryState(Base):
     campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=False, index=True)
     nombre = Column(Text, nullable=False)
     descripcion = Column(Text, nullable=True)
-    contenido_resumido = Column(Text, nullable=True)
+    resumen = Column(Text, nullable=True)
     tokens_est = Column(Integer, nullable=True)
     fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     activa = Column(Boolean, nullable=False, default=True) 

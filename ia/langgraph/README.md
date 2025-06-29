@@ -200,3 +200,70 @@ Para agregar nuevos nodos o grafos:
 ## 💡 Ejemplos Completos
 
 Ver `ejemplo_uso.py` para ejemplos detallados de todas las funcionalidades.
+
+## 🔧 Arquitectura de Sesiones de Base de Datos
+
+### Principio: Una Sesión por Procesamiento
+
+**Decisión de Diseño**: Cada email se procesa con una única sesión de base de datos desde el inicio hasta el final.
+
+#### ✅ Ventajas de esta Aproximación
+
+1. **Consistencia Transaccional**: Todo el procesamiento es una operación lógica única
+2. **Simplicidad**: Una sola responsabilidad de manejo de sesión
+3. **Atomicidad**: Rollback completo si algo falla
+4. **Rendimiento**: Evita overhead de crear/cerrar múltiples conexiones
+
+#### 🔄 Flujo de Transacciones
+
+```python
+def procesar_email(self) -> Dict[str, Any]:
+    db_session = SessionLocal()  # ✨ Una sesión para todo
+    try:
+        # 1. Buscar email pendiente
+        email = EmailManager.get_next_email(db_session)
+        
+        # 2. Procesar con LangGraph (toda la cadena usa la misma sesión)
+        result = self.email_graph.process_email(email_id, db_session, ...)
+        
+        # 3. Actualizar estado del juego
+        if result.get('success'):
+            self._update_game_state(email, result, db_session)
+            db_session.commit()  # ✅ Commit si todo fue bien
+        else:
+            db_session.rollback()  # 🔄 Rollback si hubo error
+            
+    finally:
+        db_session.close()  # 🔒 Siempre cerrar
+```
+
+#### 🎯 API Simplificada
+
+**Antes** (complejo):
+```python
+# Múltiples opciones que complicaban el código
+def procesar_email(email_id=None, db_session=None):
+    # Lógica compleja para manejar diferentes combinaciones
+```
+
+**Ahora** (simple):
+```python
+# Una responsabilidad clara
+def procesar_email(self) -> Dict[str, Any]:
+    # Siempre busca el siguiente email pendiente
+    # Siempre crea su propia sesión de BD
+```
+
+#### 🔄 Procesamiento en Lote
+
+Para múltiples emails, cada uno se procesa en su propia transacción independiente:
+
+```python
+def procesar_emails_pendientes(self, max_emails=10):
+    for _ in range(max_emails):
+        result = self.procesar_email()  # 🔄 Cada email = nueva transacción
+        if result.get('reason') == 'no_pending_emails':
+            break
+```
+
+**Ventaja**: El fallo de un email no afecta el procesamiento de los demás

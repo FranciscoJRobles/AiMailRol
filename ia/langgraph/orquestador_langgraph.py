@@ -7,6 +7,8 @@ from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from api.core.database import SessionLocal
 from api.managers.email_manager import EmailManager
+from api.managers.turn_manager import TurnManager
+from api.models.email import Email  
 from .graphs.email_processing_graph import email_processing_graph
 from .graphs.combat_resolution_graph import combat_resolution_graph
 from .states.game_state import GameState
@@ -23,94 +25,94 @@ class OrquestadorLangGraph:
         self.combat_graph = combat_resolution_graph
         self.game_states = {}  # Cache de estados de juego por campaña
     
-    def procesar_email(self, email_id: Optional[int] = None, db_session: Optional[Session] = None) -> Dict[str, Any]:
+    def procesar_email(self) -> Dict[str, Any]:
         """
-        Procesa un email usando LangGraph.
+        Procesa el siguiente email pendiente usando LangGraph.
         
-        Args:
-            email_id: ID específico del email a procesar (opcional)
-            db_session: Sesión de BD (opcional, se crea una nueva si no se proporciona)
-            
         Returns:
-            Resultado del procesamiento
+            Resultado del procesamiento:
+            - Si encuentra email: lo procesa completamente
+            - Si no hay emails pendientes: retorna success=True con reason='no_pending_emails'
         """
-        # Crear sesión de BD si no se proporciona
-        if not db_session:
-            db_session = SessionLocal()
-            should_close_session = True
-        else:
-            should_close_session = False
+        # Crear una sesión para todo el procesamiento
+        db_session = SessionLocal()
         
         try:
-            # Si no se especifica email_id, buscar el siguiente pendiente
-            if email_id is None:
-                email = EmailManager.get_next_email(db_session)
-                if not email:
-                    logger.info("No hay emails pendientes para procesar")
-                    return {
-                        'success': True,
-                        'message': 'No hay emails pendientes',
-                        'emails_processed': 0
-                    }
-                email_id = email.id
-            
-            logger.info(f"Iniciando procesamiento de email {email_id}")
-            
-            # Obtener información básica del email
-            email = EmailManager.get(db_session, email_id)
+            # Buscar el siguiente email pendiente
+            email = EmailManager.get_next_email(db_session)
             if not email:
-                logger.error(f"Email {email_id} no encontrado")
+                logger.info("No hay emails pendientes para procesar")
                 return {
-                    'success': False,
-                    'error': f'Email {email_id} no encontrado'
+                    'success': True,
+                    'message': 'No hay emails pendientes para procesar',
+                    'email_processed': False,
+                    'reason': 'no_pending_emails'
                 }
+            
+            email_id = email.id
+            logger.info(f"Iniciando procesamiento de email {email_id} de {email.sender} [proceso interrumpido aquí temporalmente]")
             
             # Determinar estado actual del juego
             current_state = self._get_current_game_state(email, db_session)
             
-            # Determinar qué grafo usar basado en el contexto
-            graph_to_use = self._select_graph(email, current_state)
+            # # Determinar qué grafo usar basado en el contexto
+            # graph_to_use = self._select_graph(email, current_state)
             
-            # Procesar email con el grafo seleccionado
-            if graph_to_use == 'combat':
-                result = self.combat_graph.process_combat_email(
-                    email_id, 
-                    db_session, 
-                    current_state.get('estado_actual', 'accion_en_turno')
-                )
-            else:
-                result = self.email_graph.process_email(
-                    email_id, 
-                    db_session, 
-                    current_state.get('estado_actual', 'narracion')
-                )
+            # # Procesar email con el grafo seleccionado
+            # if graph_to_use == 'combat':
+            #     result = self.combat_graph.process_combat_email(
+            #         email_id, 
+            #         db_session, 
+            #         current_state.get('estado_actual', 'accion_en_turno')
+            #     )
+            # else:
+            #     result = self.email_graph.process_email(
+            #         email_id, 
+            #         db_session, 
+            #         current_state.get('estado_actual', 'narracion')
+            #     )
             
-            # Actualizar estado del juego si el procesamiento fue exitoso
-            if result.get('success'):
-                self._update_game_state(email, result, db_session)
+            # # Actualizar estado del juego si el procesamiento fue exitoso
+            # if result.get('success'):
+            #     self._update_game_state(email, result, db_session)
+                
+            #     # Commit de toda la transacción si fue exitoso
+            #     db_session.commit()
+            #     logger.info(f"Procesamiento de email {email_id} completado exitosamente")
+                
+            #     # Agregar información de éxito al resultado
+            #     result['email_processed'] = True
+            #     result['email_id'] = email_id
+            # else:
+            #     # Rollback si hubo error en el procesamiento
+            #     db_session.rollback()
+            #     logger.error(f"Error en procesamiento de email {email_id}, rollback aplicado")
+            #     result['email_processed'] = False
             
-            # Enviar email de respuesta si se generó
-            if result.get('success') and result.get('email_respuesta'):
-                self._send_response_email(result['email_respuesta'], db_session)
+            # # Enviar email de respuesta si se generó (fuera de la transacción principal)
+            # if result.get('success') and result.get('email_respuesta'):
+            #     self._send_response_email(result['email_respuesta'])
             
-            logger.info(f"Procesamiento de email {email_id} completado: {result.get('success', False)}")
+            result = self._temp_success_response(email)  # Simulación de respuesta exitosa
             
             return result
             
         except Exception as e:
-            logger.error(f"Error crítico procesando email {email_id}: {e}")
+            # Error crítico → rollback completo
+            db_session.rollback()
+            logger.error(f"Error crítico procesando email: {e}")
             return {
                 'success': False,
-                'email_id': email_id,
                 'error': f'Error crítico: {str(e)}'
             }
         finally:
-            if should_close_session:
-                db_session.close()
+            # Siempre cerrar la sesión
+            db_session.close()
     
-    def procesar_emails_pendientes(self, max_emails: int = 10) -> Dict[str, Any]:
+    def procesar_emails_pendientes(self, max_emails: int = 10) -> Dict[str, Any]: # no usado por ahora
         """
         Procesa múltiples emails pendientes en lote.
+        Cada email se procesa en su propia transacción independiente.
         
         Args:
             max_emails: Máximo número de emails a procesar
@@ -118,37 +120,38 @@ class OrquestadorLangGraph:
         Returns:
             Resumen del procesamiento en lote
         """
-        db_session = SessionLocal()
+        emails_procesados = 0
+        emails_exitosos = 0
+        errores = []
+        
+        logger.info(f"Iniciando procesamiento en lote (máximo {max_emails} emails)")
         
         try:
-            emails_procesados = 0
-            emails_exitosos = 0
-            errores = []
-            
-            logger.info(f"Iniciando procesamiento en lote (máximo {max_emails} emails)")
-            
             while emails_procesados < max_emails:
-                # Buscar siguiente email pendiente
-                email = EmailManager.get_next_email(db_session)
-                if not email:
+                # Procesar siguiente email (cada uno en su propia transacción)
+                result = self.procesar_email()
+                
+                # Si no hay más emails, terminar
+                if result.get('reason') == 'no_pending_emails':
                     logger.info("No hay más emails pendientes")
                     break
                 
-                # Procesar email
-                result = self.procesar_email(email.id, db_session)
                 emails_procesados += 1
                 
                 if result.get('success'):
                     emails_exitosos += 1
-                    logger.info(f"Email {email.id} procesado exitosamente")
+                    email_id = result.get('email_id', 'unknown')
+                    logger.info(f"Email {email_id} procesado exitosamente")
                 else:
+                    email_id = result.get('email_id', 'unknown')
                     errores.append({
-                        'email_id': email.id,
+                        'email_id': email_id,
                         'error': result.get('error', 'Error desconocido')
                     })
-                    logger.error(f"Error procesando email {email.id}: {result.get('error')}")
+                    logger.error(f"Error procesando email {email_id}: {result.get('error')}")
             
-            return {
+            # Resultado final
+            resultado_final = {
                 'success': True,
                 'emails_procesados': emails_procesados,
                 'emails_exitosos': emails_exitosos,
@@ -156,30 +159,36 @@ class OrquestadorLangGraph:
                 'errores': errores
             }
             
+            # Si no se procesó ningún email, agregar información adicional
+            if emails_procesados == 0:
+                resultado_final['message'] = 'No había emails pendientes para procesar'
+                resultado_final['reason'] = 'no_pending_emails'
+            
+            return resultado_final
+            
         except Exception as e:
             logger.error(f"Error en procesamiento en lote: {e}")
             return {
                 'success': False,
                 'error': f'Error en lote: {str(e)}',
                 'emails_procesados': emails_procesados,
-                'emails_exitosos': emails_exitosos
+                'emails_exitosos': emails_exitosos,
+                'errores': errores
             }
-        finally:
-            db_session.close()
     
     def _get_current_game_state(self, email, db_session: Session) -> Dict[str, Any]:
-        """Obtiene el estado actual del juego para el email."""
+        """Obtiene el estado actual del juego para el email usando el campo fase_actual."""
         try:
             campaign_id = email.campaign_id
             scene_id = email.scene_id
-            
+
             # Si tenemos el estado en cache, usarlo
             if campaign_id in self.game_states:
                 cached_state = self.game_states[campaign_id]
                 # Verificar si el estado está actualizado
                 if cached_state.get('last_updated', datetime.min) > datetime.now().replace(hour=0):
                     return cached_state
-            
+
             # Obtener estado actual desde la BD
             # Por defecto, asumir narración libre
             current_state = {
@@ -188,21 +197,20 @@ class OrquestadorLangGraph:
                 'scene_id': scene_id,
                 'last_updated': datetime.now()
             }
-            
-            # Verificar si hay un turno activo (indicaría combate)
+
+            # Consultar la escena y usar el campo fase_actual
             if scene_id:
-                from api.managers.turn_manager import TurnManager
-                active_turn = TurnManager.get_active_turn_by_scene(db_session, scene_id)
-                if active_turn:
-                    current_state['estado_actual'] = 'accion_en_turno'
-                    current_state['turno_activo'] = active_turn.id
-            
+                from api.models.scene import Scene
+                scene = db_session.query(Scene).filter(Scene.id == scene_id).first()
+                if scene:
+                    current_state['estado_actual'] = scene.fase_actual
+
             # Cachear estado
             if campaign_id:
                 self.game_states[campaign_id] = current_state
-            
+
             return current_state
-            
+
         except Exception as e:
             logger.error(f"Error obteniendo estado del juego: {e}")
             return {
@@ -264,7 +272,7 @@ class OrquestadorLangGraph:
         except Exception as e:
             logger.error(f"Error actualizando estado del juego: {e}")
     
-    def _send_response_email(self, email_response: Dict[str, Any], db_session: Session):
+    def _send_response_email(self, email_response: Dict[str, Any]):
         """Envía el email de respuesta (placeholder - implementar según tu sistema de envío)."""
         try:
             # TODO: Implementar envío real de emails según tu configuración
@@ -309,6 +317,22 @@ class OrquestadorLangGraph:
                 'emails_pendientes': 0,
                 'emails_procesados_hoy': 0
             }
+
+    def _temp_success_response(self, email: Email):   
+        """Genera una respuesta de éxito temporal para pruebas."""
+        return {
+            'success': True,
+            'message': 'Email procesado exitosamente',
+            'email_processed': True,
+            'email_id': email.id,
+            'email_response': {
+                'subject': f"Respuesta a {email.subject}",
+                'body': "Este es un mensaje de prueba",
+                'recipients': [email.sender],
+                'thread_id': email.thread_id
+            }
+        }
+
 
 # Instancia global del orquestador
 orquestador_langgraph = OrquestadorLangGraph()

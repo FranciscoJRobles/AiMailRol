@@ -5,10 +5,6 @@ from api.models.story_state import StoryState
 from api.models.campaign import Campaign
 from api.models.ruleset import Ruleset
 from api.models.character import Character
-from api.crud.character import get_personajes_por_escena
-from api.crud.scene import get_scene_by_id
-from api.crud.story_state import get_story_state_by_id
-from api.crud.campaign import get_campaign_by_id
 
 class SubagenteRecopiladorContexto:
     def __init__(self, db: Session, resumidor_textos=None):

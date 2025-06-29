@@ -8,6 +8,7 @@ class SceneBase(BaseModel):
     descripcion_larga: str
     resumen_estado: str
     activa: bool = True  # Nuevo campo para indicar si la escena está activa
+    fase_actual: str  # Fase actual de la escena, puede ser narrativa o combate
 
 class SceneCreate(SceneBase):
     pass
@@ -18,6 +19,7 @@ class SceneUpdate(BaseModel):
     descripcion_larga: Optional[str] = None
     resumen_estado: Optional[str] = None
     activa: Optional[bool] = None  # Actualización de activa
+    fase_actual: Optional[str] = None  # Actualización de fase actual
 
 class SceneResponse(SceneBase):
     id: int

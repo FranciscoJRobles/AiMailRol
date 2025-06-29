@@ -21,8 +21,8 @@ class EmailProcessingGraph:
     """Grafo principal para procesamiento de emails de rol."""
     
     def __init__(self):
-        self.graph = self._build_graph()
         self.checkpointer = MemorySaver()  # Para persistir estado entre ejecuciones
+        self.graph = self._build_graph()
     
     def _build_graph(self) -> StateGraph:
         """Construye el grafo de procesamiento."""

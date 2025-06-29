@@ -292,8 +292,9 @@ class CombatResolutionGraph:
     """Grafo especializado para resolución de combate."""
     
     def __init__(self):
-        self.graph = self._build_graph()
         self.checkpointer = MemorySaver()
+        self.graph = self._build_graph()
+
     
     def _build_graph(self) -> StateGraph:
         """Construye el grafo de resolución de combate."""
