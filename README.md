@@ -31,54 +31,34 @@ Backend para un sistema de rol multijugador por email, con integración de IA y 
 
 ## Estructura del proyecto
 ```
+main.py                # Punto de entrada FastAPI
 api/
-  main.py                # Punto de entrada FastAPI
   core/database.py       # Configuración de la base de datos
   models/                # Modelos SQLAlchemy (Campaign, Character, etc.)
   models/associations.py # Tablas de asociación M:N
   schemas/               # Schemas Pydantic (Create, Update, Out)
   managers/              # Lógica de negocio y orquestación
-  endpoints/             # Rutas y controladores FastAPI
-config/
-  credentials.json, token.json # Configuración de servicios externos
+  endpoints/             # Endpoints RESTful
 ia/
-  ia_client.py           # Cliente para integración de IA
-  constantes/intenciones.py # Lista centralizada de intenciones de email
-  agentes/
-    agente_procesador_email.py # Orquestador de análisis de emails
-    subagentes/
-      subagente_intencion_mensaje_email.py # Subagente IA para clasificación
-jobs/
-  email_cron.py          # Tareas programadas (cron)
-services/
-  gmail_service.py, ...  # Servicios externos y utilidades
-utils/
-  env_loader.py          # Utilidades de entorno
-tests/
-  test_agente_procesador_email.py # Tests de clasificación de intenciones
-  emails/email_largo_ejemplo.txt  # Ejemplo de email largo para pruebas
+  langgraph/             # Sistema LangGraph para procesamiento de emails
+jobs/                   # Tareas en segundo plano (cron jobs)
+utils/                  # Utilidades generales (logger, loaders, etc.)
 ```
 
-## Instalación
-1. Clona el repositorio y accede al directorio:
-   ```powershell
-   git clone <repo-url>
-   cd AiMailRol
-   ```
-2. Instala las dependencias:
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\activate
+## Cómo ejecutar
+
+1. Instalar dependencias:
+   ```bash
    pip install -r requirements.txt
    ```
-3. Configura las variables de entorno y archivos en `config/` según sea necesario.
 
-## Ejecución
-Lanza el servidor de desarrollo con:
-```powershell
-uvicorn api.main:app --reload
-```
-Accede a la documentación interactiva en [http://localhost:8000/docs](http://localhost:8000/docs)
+2. Configurar variables de entorno:
+   - Crear un archivo `.env` basado en `.env.example`.
+
+3. Ejecutar la aplicación:
+   ```bash
+   python main.py
+   ```
 
 ## Pruebas
 Asegúrate de tener la base de datos configurada y ejecuta los tests (si existen):

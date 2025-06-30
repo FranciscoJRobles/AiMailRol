@@ -12,50 +12,56 @@ Esta carpeta contiene la nueva implementación basada en **LangGraph** para el p
 - **Memoria**: Estados que persisten entre emails de un hilo
 - **Monitoreo**: Stream de eventos para debugging y monitoreo
 
-## 📁 Estructura de Archivos
+## 📂 Estructura de Archivos
 
 ```
 ia/langgraph/
 ├── __init__.py                         # Exports principales
 ├── orquestador_langgraph.py           # Orquestador principal
-├── ejemplo_uso.py                     # Ejemplos de uso
+├── ejemplos_uso.py                    # Ejemplos de uso
 ├── README.md                          # Esta documentación
 ├── graphs/                            # Grafos LangGraph
 │   ├── email_processing_graph.py      # Grafo principal de emails
-│   └── combat_resolution_graph.py     # Grafo especializado en combate
+│   ├── combat_resolution_graph.py     # Grafo especializado en combate
 ├── nodes/                             # Nodos individuales del grafo
 │   ├── email_analysis_node.py         # Análisis de emails con IA
 │   ├── context_gathering_node.py      # Recopilación de contexto
 │   ├── rules_validation_node.py       # Validación de reglas
 │   ├── response_generation_node.py    # Generación de respuestas
-│   └── state_transition_node.py       # Gestión de transiciones
+│   ├── state_transition_node.py       # Gestión de transiciones
 ├── states/                            # Definiciones de estado
 │   ├── email_state.py                 # Estado del procesamiento
-│   └── game_state.py                  # Estado persistente del juego
-└── chains/                            # Cadenas especializadas
+│   ├── game_state.py                  # Estado persistente del juego
+├── chains/                            # Cadenas especializadas
     ├── analysis_chain.py              # Análisis complejos
-    └── response_chain.py              # Respuestas elaboradas
+    ├── response_chain.py              # Respuestas elaboradas
+├── agentes/                           # Agentes especializados
+│   ├── agente_gestor_emails.py        # Gestión de emails
+│   ├── agente_recopilador_contexto.py # Recopilación de contexto
+│   ├── agente_resumidor_textos.py     # Resumen de textos
 ```
 
 ## 🔄 Flujo de Procesamiento
 
-### Grafo Principal (email_processing_graph.py)
-```
-[Email] → Análisis → Contexto → Validación → Respuesta → Transición → [Fin]
-```
+1. **Recopilación de Contexto**:
+   - Nodo: `context_gathering_node.py`
+   - Obtiene historial, resúmenes y ambientación de la campaña.
 
-1. **Análisis**: Clasifica intenciones y detecta transiciones
-2. **Contexto**: Recopila historial, reglas y estado del juego
-3. **Validación**: Verifica acciones contra las reglas
-4. **Respuesta**: Genera la narrativa de respuesta
-5. **Transición**: Actualiza estado y persiste cambios
+2. **Análisis de Emails**:
+   - Nodo: `email_analysis_node.py`
+   - Clasifica intenciones y extrae información clave.
 
-### Grafo de Combate (combat_resolution_graph.py)
-```
-[Email] → Análisis → Contexto → Iniciativa → Resolución → Respuesta → [Fin]
-```
+3. **Validación de Reglas**:
+   - Nodo: `rules_validation_node.py`
+   - Verifica que las acciones cumplan con las reglas del juego.
 
-Especializado para situaciones de combate con manejo de turnos e iniciativas.
+4. **Generación de Respuestas**:
+   - Nodo: `response_generation_node.py`
+   - Genera respuestas narrativas basadas en el análisis.
+
+5. **Transiciones de Estado**:
+   - Nodo: `state_transition_node.py`
+   - Actualiza el estado del juego según las acciones procesadas.
 
 ## 🛠️ Uso Básico
 
