@@ -9,6 +9,13 @@ from utils.env_loader import get_env_variable
 from utils.utils import clean_json_response
 from enum import Enum
 
+class PerfilesEnum(str,Enum):
+    CREATIVA = "creativa"
+    PRECISA = "precisa"
+    NEUTRAL = "neutral"
+    RESUMEN = "resumen"
+    CLASIFICACION = "clasificacion"
+
 class IAClient:
     # Perfiles de configuración para la IA
     PERFILES = {
@@ -37,15 +44,7 @@ class IAClient:
             "top_p": 0.6,
             "max_tokens": 1024
         }
-    }
-    
-    class PerfilesEnum(str,Enum):
-        CREATIVA = "creativa"
-        PRECISA = "precisa"
-        NEUTRAL = "neutral"
-        RESUMEN = "resumen"
-        CLASIFICACION = "clasificacion"
-    
+    }   
 
     def __init__(self, config=None, perfil: str = "creativa"):
         """
@@ -97,7 +96,7 @@ class IAClient:
         self.contexto_inicial = SystemMessage(content=texto_contexto)
 
 
-    def procesar_mensaje(self, mensaje: str, contexto: dict = None, perfil: str = None) -> str:
+    def procesar_mensaje(self, mensaje: str, contexto: dict = None) -> str:
         """
         Procesa un mensaje usando la IA de Azure OpenAI y devuelve la respuesta generada.
         Permite especificar un perfil de parámetros para esta llamada.
@@ -106,8 +105,6 @@ class IAClient:
         :param perfil: (opcional) Nombre del perfil de parámetros a usar para esta llamada.
         :return: Respuesta generada por la IA.
         """
-        if perfil and perfil != self.perfil:
-            self.set_perfil(perfil)
         mensajes = []
         # Ejemplo de contexto: puedes pasar un historial de mensajes o instrucciones de sistema
         if contexto:

@@ -13,7 +13,7 @@ class EmailState(TypedDict):
     email_data: Dict[str, Any]  # Datos del email (subject, body, sender, etc.)
     
     # Análisis del email
-    intenciones: Optional[List[Dict[str, Any]]]  # Lista de intenciones clasificadas
+    clasificacion_intenciones: Optional[List[Dict[str, Any]]]  # Lista de intenciones clasificadas
     transicion_detectada: Optional[Dict[str, Any]]  # Cambio de estado detectado
     
     # Contexto del juego

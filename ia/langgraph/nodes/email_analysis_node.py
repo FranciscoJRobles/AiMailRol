@@ -6,7 +6,7 @@ Clasifica intenciones y detecta transiciones de estado.
 from typing import Dict, Any
 from langgraph.graph import StateGraph
 
-from ia.ia_client import IAClient
+from ia.ia_client import IAClient, PerfilesEnum
 from ..states.email_state import EmailState
 from api.managers.email_manager import EmailManager
 from api.managers.character_manager import CharacterManager
@@ -21,8 +21,7 @@ class EmailAnalysisNode:
     """Nodo encargado del análisis de emails entrantes."""
     
 
-    
-    def __call__(self, state: EmailState, modo: PhaseType.narracion) -> EmailState:
+    def __call__(self, state: EmailState, modo: PhaseType = PhaseType.narracion) -> EmailState:
         """
         Analiza el email y clasifica sus intenciones.
         
@@ -71,7 +70,7 @@ class EmailAnalysisNode:
             
             # Analizar intenciones en el texto
             texto_email = state['email_data']['body']
-            estado_actual = state.get('estado_actual', 'narracion')
+            estado_actual = state['estado_actual'] = modo
             response_dict = self._analizar_narracion_email(
                 texto_email, 
                 estado_actual, 
@@ -80,18 +79,11 @@ class EmailAnalysisNode:
             )
             
             state['clasificacion_intenciones'] = response_dict.get['clasificacion_intenciones']
-            state['transicion_detectada'] = response_dict.get('transicion_detectada')
-            
-            # Analizar posible transición de estado
-            estado_actual = state.get('estado_actual', 'narracion')
-            transicion = self.subagente_analisis.analizarTransicion(
-                texto_email, 
-                estado_actual
-            )
-            state['transicion_detectada'] = transicion
+            transicion =state['transicion_detectada'] = response_dict.get('transicion_dinamica')
+        
             
             # Actualizar estado si hay cambio detectado
-            if transicion and transicion.get('cambio_detectado'):
+            if transicion and transicion.get('nuevo_estado') != estado_actual:
                 state['estado_nuevo'] = transicion.get('nuevo_estado')
                 logger.info(f"Transición detectada: {estado_actual} -> {state['estado_nuevo']}")
             
@@ -104,15 +96,8 @@ class EmailAnalysisNode:
             state['errors'].append(f"Error en análisis: {str(e)}")
         
         return state
-
-# Función helper para usar en el grafo
-def analyze_email_node(state: EmailState) -> EmailState:
-    """Función de conveniencia para usar en el grafo LangGraph."""
-    node = EmailAnalysisNode()
-    return node(state)
-
-
-def _analizar_narracion_email(self, texto, estado_actual, lista_personajes_pj=None, personaje_sender=None):
+    
+    def _analizar_narracion_email(self, texto, estado_actual, lista_personajes_pj=None, personaje_sender=None):
         """
         Analiza un email de rol durante el estado narración y devuelve un JSON con:
         - transicion_dinamica: si hay cambio de dinámica narrativa
@@ -207,9 +192,11 @@ def _analizar_narracion_email(self, texto, estado_actual, lista_personajes_pj=No
         if personaje_sender:
             prompt += f"\nEl personaje que envía este email es: {personaje_sender} y generalmente es a quien se le aplican estas clasificaciones."
         try:
+            iaClient = IAClient(perfil=PerfilesEnum.CLASIFICACION.value)
             contexto = dict(sistema=prompt, historial=[])
-            respuesta = IAClient.procesar_mensaje(texto, contexto, IAClient.PerfilesEnum.CLASIFICACION)
-            data = json.loads(respuesta)
+            respuesta = iaClient.procesar_mensaje(texto, contexto)
+            data = json.loads(respuesta)            
+            logger.info(f"clasificación completado. dict: {data}")
             return data
         except Exception as e:
             print("Error al analizar email:", e)
@@ -222,3 +209,11 @@ def _analizar_narracion_email(self, texto, estado_actual, lista_personajes_pj=No
                 },
                 "cambio_estado": []
             }
+            
+# Función helper para usar en el grafo
+def analyze_email_node(state: EmailState) -> EmailState:
+    """Función de conveniencia para usar en el grafo LangGraph."""
+    node = EmailAnalysisNode()
+    return node(state)
+
+
