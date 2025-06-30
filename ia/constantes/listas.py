@@ -1,5 +1,38 @@
 # Lista centralizada de intenciones posibles para el análisis de emails de rol
-INTENCIONES_EMAIL = [
+# para futuro: añadir campos "creacion_pnj"
+
+ANALISIS_NARRACION_EMAIL = [
+    'tipo_accion',
+    'objetivo_accion',
+    'intencion_jugador',
+    'consulta_narrador',
+    'metajuego',
+    'referencia_inventario',
+    'tono_urgencia',
+    'cambio_potencial_fase',
+    'progreso_trama',
+    'decision_clave_narrativa',
+    'creacion_subtrama'
+]
+
+
+
+ANALISIS_COMBATE_EMAIL = [
+    'tipo_accion',
+    'objetivo_accion',
+    'intencion_jugador',
+    'consulta_narrador',
+    'metajuego',
+    'referencia_inventario'
+]
+
+TRANSICION_DE_DINÁMICA ={
+    "combate",
+    "narración"
+}
+
+
+INTENCION_EMAIL = [
     'accion_sencilla',
     'accion_con_tirada',
     'combate',
@@ -12,8 +45,3 @@ INTENCIONES_EMAIL = [
     'consulta_narrador',
     'otro'
 ]
-
-TRANSICION_DE_DINÁMICA ={
-    "accion_en_turno",
-    "narracion"
-}

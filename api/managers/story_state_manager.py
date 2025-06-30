@@ -82,28 +82,3 @@ class StoryStateManager:
         """Devuelve una lista de instancias de Character asociadas a un StoryState"""
         story_state = db.query(StoryState).filter(StoryState.id == story_state_id).first()
         return story_state.characters if story_state else []
-
-    @staticmethod
-    def get_active_storystate_keywords(db: Session, campaign_id: Optional[int] = None) -> List[str]:
-        """
-        Obtiene todas las palabras clave de StoryStates activos.
-        
-        Args:
-            db: Sesión de base de datos
-            campaign_id: ID de campaña específica (opcional)
-            
-        Returns:
-            Lista de palabras clave de StoryStates activos
-        """
-        query = db.query(StoryState).filter(StoryState.activa == True)
-        
-        # Si se especifica campaign_id, filtrar por campaña
-        if campaign_id is not None:
-            query = query.filter(StoryState.campaign_id == campaign_id)
-        
-        story_states = query.all()
-        
-        # Extraer las palabras clave (asumiendo que tienes un campo 'keyword' en StoryState)
-        keywords = [story_state.nombre_clave for story_state in story_states if story_state.nombre_clave]
-        
-        return keywords

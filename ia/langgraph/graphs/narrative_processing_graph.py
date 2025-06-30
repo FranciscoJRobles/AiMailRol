@@ -12,12 +12,13 @@ from ..nodes.context_gathering_node import gather_context_node
 from ..nodes.rules_validation_node import validate_rules_node
 from ..nodes.response_generation_node import generate_response_node
 from ..nodes.state_transition_node import transition_state_node
+from api.models.scene import PhaseType
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
 
-class EmailProcessingGraph:
+class NarrativeProcessingGraph:
     """Grafo principal para procesamiento de emails de rol."""
     
     def __init__(self):
@@ -31,30 +32,28 @@ class EmailProcessingGraph:
         workflow = StateGraph(EmailState)
         
         # Agregar nodos
-        workflow.add_node("analyze_email", analyze_email_node)
         workflow.add_node("gather_context", gather_context_node)
-        workflow.add_node("validate_rules", validate_rules_node)
+        workflow.add_node("analyze_email", analyze_email_node)
         workflow.add_node("generate_response", generate_response_node)
         workflow.add_node("transition_state", transition_state_node)
         
         # Definir el flujo
-        workflow.set_entry_point("analyze_email")
+        workflow.set_entry_point("gather_context")
         
         # Flujo principal: análisis -> contexto -> validación -> respuesta -> transición
-        workflow.add_edge("analyze_email", "gather_context")
-        workflow.add_edge("gather_context", "validate_rules")
-        workflow.add_edge("validate_rules", "generate_response")
+        workflow.add_edge("gather_context", "analyze_email")
+        workflow.add_edge("analyze_email", "generate_response")
         workflow.add_edge("generate_response", "transition_state")
         workflow.add_edge("transition_state", END)
         
         # Compilar el grafo
         return workflow.compile(checkpointer=self.checkpointer)
     
-    def process_email(
+    def process_narrative_email(
         self, 
         email_id: int, 
         db_session: Any,
-        current_state: str = "narracion"
+        current_state: str = PhaseType.narracion
     ) -> Dict[str, Any]:
         """
         Procesa un email completo usando el grafo.
@@ -137,7 +136,7 @@ class EmailProcessingGraph:
             return """
             Flujo del grafo de procesamiento de emails:
             
-            [INICIO] -> analyze_email -> gather_context -> validate_rules 
+            [INICIO] -> gather_context -> analyze_email 
                      -> generate_response -> transition_state -> [FIN]
             """
     
@@ -145,7 +144,7 @@ class EmailProcessingGraph:
         self, 
         email_id: int, 
         db_session: Any,
-        current_state: str = "narracion"
+        current_state: str = PhaseType.narracion
     ):
         """
         Procesa un email y retorna un stream de eventos para monitoreo.
@@ -194,4 +193,4 @@ class EmailProcessingGraph:
             yield {"error": f"Error en stream: {str(e)}"}
 
 # Instancia global del grafo
-email_processing_graph = EmailProcessingGraph()
+narrative_processing_graph = NarrativeProcessingGraph()

@@ -45,7 +45,7 @@ def test_orquestador():
         
         # Test 3: Verificar componentes
         print("\n🔧 Test 3: Verificando componentes...")
-        print(f"   ✅ Email graph: {type(orquestador_langgraph.email_graph).__name__}")
+        print(f"   ✅ Email graph: {type(orquestador_langgraph.narrative_graph).__name__}")
         print(f"   ✅ Combat graph: {type(orquestador_langgraph.combat_graph).__name__}")
         print(f"   ✅ Game states cache: {len(orquestador_langgraph.game_states)} estados")
         

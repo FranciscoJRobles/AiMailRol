@@ -14,7 +14,7 @@ class GameState(TypedDict):
     current_story_state_id: Optional[int]
     
     # Estado actual del juego
-    estado_actual: str  # "narracion" o "accion_en_turno"
+    estado_actual: str  # "narración" o "combate"
     
     # Personajes activos
     personajes_activos: List[Dict[str, Any]]  # PJs en la escena actual

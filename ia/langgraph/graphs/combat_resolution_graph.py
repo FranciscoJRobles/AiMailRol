@@ -12,6 +12,7 @@ from ..nodes.context_gathering_node import gather_context_node
 from ..nodes.rules_validation_node import validate_rules_node
 from api.managers.turn_manager import TurnManager
 from api.managers.character_manager import CharacterManager
+from api.models.scene import PhaseType
 from ia.ia_client import IAClient
 from datetime import datetime
 import logging
@@ -321,7 +322,7 @@ class CombatResolutionGraph:
         self, 
         email_id: int, 
         db_session: Any,
-        current_state: str = "accion_en_turno"
+        current_state: str = PhaseType.combate
     ) -> Dict[str, Any]:
         """
         Procesa un email de combate usando el grafo especializado.

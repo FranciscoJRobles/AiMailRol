@@ -4,7 +4,7 @@ from api.core.database import Base
 from enum import Enum
 
 class PhaseType(str, Enum):
-    narrativa = "narrativa"
+    narracion = "narración"
     combate = "combate"
 
 class Scene(Base):

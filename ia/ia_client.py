@@ -35,7 +35,7 @@ class IAClient:
         "clasificacion": {
             "temperature": 0.1,
             "top_p": 0.6,
-            "max_tokens": 512
+            "max_tokens": 1024
         }
     }
     
@@ -117,6 +117,7 @@ class IAClient:
                 for msg in contexto["historial"]:
                     mensajes.append(HumanMessage(content=msg))
         mensajes.append(HumanMessage(content=mensaje))
-        response = self.llm.invoke(mensajes)
-        return clean_json_response(response.content)
+        response = self.llm.invoke(mensajes)       
+        
+        return response.content
 

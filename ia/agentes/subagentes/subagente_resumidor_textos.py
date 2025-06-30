@@ -7,7 +7,7 @@ class SubagenteResumidorTextos:
         Fusiona el resumen previo de la escena con los emails recientes, generando un nuevo resumen coherente y sintético.
         """
         instrucciones = (
-            "Eres un agente experto en resumir mensajes de rol. Fusiona el resumen previo de la escena con los mensajes recientes. "
+            "Eres un agente experto en resumir mensajes de una partida de rol. Fusiona el resumen previo de la escena con los mensajes recientes. "
             "Mantén lo relevante del resumen previo y añade los eventos, acciones y diálogos más importantes de los mensajes nuevos. "
             "El nuevo resumen debe ser claro, coherente y no crecer indefinidamente: sintetiza la nueva información con la vieja, eliminando detalles redundantes o irrelevantes."
         )

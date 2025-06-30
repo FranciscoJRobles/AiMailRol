@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 from api.core.database import SessionLocal
 from api.managers.email_manager import EmailManager
 from api.managers.turn_manager import TurnManager
+from api.managers.scene_manager import SceneManager
 from api.models.email import Email  
-from .graphs.email_processing_graph import email_processing_graph
+from api.models.scene import Scene, PhaseType
+from .graphs.narrative_processing_graph import narrative_processing_graph
 from .graphs.combat_resolution_graph import combat_resolution_graph
 from .states.game_state import GameState
 from datetime import datetime
@@ -21,7 +23,7 @@ class OrquestadorLangGraph:
     """Orquestador principal usando LangGraph para procesamiento de emails."""
     
     def __init__(self):
-        self.email_graph = email_processing_graph
+        self.narrative_graph = narrative_processing_graph
         self.combat_graph = combat_resolution_graph
         self.game_states = {}  # Cache de estados de juego por campaña
     
@@ -55,45 +57,44 @@ class OrquestadorLangGraph:
             # Determinar estado actual del juego
             current_state = self._get_current_game_state(email, db_session)
             
-            # # Determinar qué grafo usar basado en el contexto
-            # graph_to_use = self._select_graph(email, current_state)
+            # Determinar qué grafo usar basado en el contexto
+            graph_to_use = self._select_graph(email, current_state)
             
-            # # Procesar email con el grafo seleccionado
-            # if graph_to_use == 'combat':
-            #     result = self.combat_graph.process_combat_email(
-            #         email_id, 
-            #         db_session, 
-            #         current_state.get('estado_actual', 'accion_en_turno')
-            #     )
-            # else:
-            #     result = self.email_graph.process_email(
-            #         email_id, 
-            #         db_session, 
-            #         current_state.get('estado_actual', 'narracion')
-            #     )
+            # Procesar email con el grafo seleccionado
+            if graph_to_use == PhaseType.combate:
+                result = self.combat_graph.process_combat_email(
+                    email_id, 
+                    db_session, 
+                    current_state.get('estado_actual', PhaseType.combate)
+                )
+            else:
+                result = self.narrative_graph.process_narrative_email(
+                    email_id, 
+                    db_session, 
+                    current_state.get('estado_actual', PhaseType.narracion)
+                )
             
-            # # Actualizar estado del juego si el procesamiento fue exitoso
-            # if result.get('success'):
-            #     self._update_game_state(email, result, db_session)
+            # Actualizar estado del juego si el procesamiento fue exitoso
+            if result.get('success'):
+                self._update_game_state(email, result, db_session)
                 
-            #     # Commit de toda la transacción si fue exitoso
-            #     db_session.commit()
-            #     logger.info(f"Procesamiento de email {email_id} completado exitosamente")
+                # Commit de toda la transacción si fue exitoso
+                db_session.commit()
+                logger.info(f"Procesamiento de email {email_id} completado exitosamente")
                 
-            #     # Agregar información de éxito al resultado
-            #     result['email_processed'] = True
-            #     result['email_id'] = email_id
-            # else:
-            #     # Rollback si hubo error en el procesamiento
-            #     db_session.rollback()
-            #     logger.error(f"Error en procesamiento de email {email_id}, rollback aplicado")
-            #     result['email_processed'] = False
+                # Agregar información de éxito al resultado
+                result['email_processed'] = True
+                result['email_id'] = email_id
+            else:
+                # Rollback si hubo error en el procesamiento
+                db_session.rollback()
+                logger.error(f"Error en procesamiento de email {email_id}, rollback aplicado")
+                result['email_processed'] = False
             
-            # # Enviar email de respuesta si se generó (fuera de la transacción principal)
-            # if result.get('success') and result.get('email_respuesta'):
-            #     self._send_response_email(result['email_respuesta'])
+            # Enviar email de respuesta si se generó (fuera de la transacción principal)
+            if result.get('success') and result.get('email_respuesta'):
+                self._send_response_email(result['email_respuesta'])
             
-            result = self._temp_success_response(email)  # Simulación de respuesta exitosa
             
             return result
             
@@ -192,7 +193,7 @@ class OrquestadorLangGraph:
             # Obtener estado actual desde la BD
             # Por defecto, asumir narración libre
             current_state = {
-                'estado_actual': 'narracion',
+                'estado_actual': PhaseType.narracion,
                 'campaign_id': campaign_id,
                 'scene_id': scene_id,
                 'last_updated': datetime.now()
@@ -200,8 +201,7 @@ class OrquestadorLangGraph:
 
             # Consultar la escena y usar el campo fase_actual
             if scene_id:
-                from api.models.scene import Scene
-                scene = db_session.query(Scene).filter(Scene.id == scene_id).first()
+                scene = SceneManager.get_actual_phase_by_scene_id(scene_id)
                 if scene:
                     current_state['estado_actual'] = scene.fase_actual
 
@@ -212,9 +212,9 @@ class OrquestadorLangGraph:
             return current_state
 
         except Exception as e:
-            logger.error(f"Error obteniendo estado del juego: {e}")
+            logger.error(f"Error obteniendo fase_actual del juego: {e}")
             return {
-                'estado_actual': 'narracion',
+                'estado_actual': PhaseType.narracion,
                 'campaign_id': getattr(email, 'campaign_id', None),
                 'scene_id': getattr(email, 'scene_id', None),
                 'last_updated': datetime.now()
@@ -224,27 +224,15 @@ class OrquestadorLangGraph:
         """Selecciona qué grafo usar basado en el email y estado actual."""
         try:
             # Si ya estamos en combate, usar grafo de combate
-            if current_state.get('estado_actual') == 'accion_en_turno':
-                return 'combat'
-            
-            # Análisis rápido del contenido para detectar palabras clave de combate
-            body = getattr(email, 'body', '').lower()
-            combat_keywords = [
-                'atacar', 'golpear', 'combate', 'luchar', 'pelear',
-                'disparo', 'espada', 'magia ofensiva', 'hechizo de ataque',
-                'iniciativa', 'turno', 'defensa'
-            ]
-            
-            if any(keyword in body for keyword in combat_keywords):
-                logger.info("Detectadas palabras clave de combate, usando grafo de combate")
-                return 'combat'
+            if current_state.get('estado_actual') == PhaseType.combate:
+                return PhaseType.combate        
             
             # Por defecto, usar grafo normal
-            return 'normal'
+            return PhaseType.narracion
             
         except Exception as e:
             logger.error(f"Error seleccionando grafo: {e}")
-            return 'normal'
+            return PhaseType.narracion
     
     def _update_game_state(self, email, result: Dict[str, Any], db_session: Session):
         """Actualiza el estado del juego basado en el resultado del procesamiento."""
@@ -263,7 +251,7 @@ class OrquestadorLangGraph:
                 
                 # Actualizar si el combate terminó
                 if result.get('combat_ended'):
-                    state['estado_actual'] = 'narracion'
+                    state['estado_actual'] = PhaseType.narracion
                 
                 state['last_updated'] = datetime.now()
                 
@@ -317,21 +305,6 @@ class OrquestadorLangGraph:
                 'emails_pendientes': 0,
                 'emails_procesados_hoy': 0
             }
-
-    def _temp_success_response(self, email: Email):   
-        """Genera una respuesta de éxito temporal para pruebas."""
-        return {
-            'success': True,
-            'message': 'Email procesado exitosamente',
-            'email_processed': True,
-            'email_id': email.id,
-            'email_response': {
-                'subject': f"Respuesta a {email.subject}",
-                'body': "Este es un mensaje de prueba",
-                'recipients': [email.sender],
-                'thread_id': email.thread_id
-            }
-        }
 
 
 # Instancia global del orquestador

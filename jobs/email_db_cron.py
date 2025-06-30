@@ -28,21 +28,11 @@ def start_email_db_processor(intervalo_segundos=5):
             
             print("Iniciando procesamiento de emails pendientes...")
             # Usar el nuevo orquestador LangGraph
-            resultado = orquestador_langgraph.procesar_emails_pendientes(max_emails=5)
+            resultado = orquestador_langgraph.procesar_email()
             
-            if resultado.get('success'):
-                emails_procesados = resultado.get('emails_procesados', 0)
-                emails_exitosos = resultado.get('emails_exitosos', 0)
-                
-                if emails_procesados == 0:
-                    print("No había emails pendientes para procesar")
-                else:
-                    print(f"Procesamiento completado: {emails_exitosos}/{emails_procesados} emails exitosos")
-                
-                if resultado.get('errores'):
-                    print(f"Errores encontrados: {len(resultado['errores'])}")
-                    for error in resultado['errores'][:3]:  # Mostrar solo los primeros 3 errores
-                        print(f"  - Email {error['email_id']}: {error['error']}")
+            if resultado.get('success') == True:
+                # Aquí podrías guardar el resultado en la base de datos si es necesario                
+                print(f"Email procesado exitosamente: {resultado.get('email_id')}")
             else:
                 print(f"Error en procesamiento: {resultado.get('error', 'Error desconocido')}") 
             

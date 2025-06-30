@@ -241,8 +241,6 @@ class GmailService:
                 # TODO: Implementar lógica para manejar solicitudes de creación de StoryState
                 continue
 
-            # recuperar la Scene_id de la StoryState
-
             # Procesar email
             sender = next((h['value'] for h in headers if h['name'] == 'From'), '')
             recipients = [h['value'] for h in headers if h['name'] in ['To', 'Cc', 'Bcc']]
@@ -279,5 +277,3 @@ class GmailService:
             self.mark_as_read(msg['id'])
         db.close()
 
-# Llamar a initialize_gmail_service() al inicio del módulo para inicializar el servicio
-#initialize_gmail_service()
