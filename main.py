@@ -2,11 +2,11 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from sqlalchemy.exc import ProgrammingError
 from api.core.database import Base, engine
-import api.models.email, api.models.player, api.models.character, api.models.scene, api.models.story_state, api.models.turn, api.models.ruleset, api.models.campaign  # importa aquí todos los modelos que quieras crear
+import api.models.email, api.models.player, api.models.character, api.models.scene, api.models.story, api.models.turn, api.models.ruleset, api.models.campaign  # importa aquí todos los modelos que quieras crear
 import threading
 from jobs.gmail_service_cron import start_email_cron  # Importa desde la raíz del proyecto
 from jobs.email_db_cron import start_email_db_processor  # Importa desde la raíz del proyecto
-from api.endpoints import email, player, character, scene, story_state, turn, ruleset, campaign
+from api.endpoints import email, player, character, scene, story, turn, ruleset, campaign
 from utils.logger_config import configure_logging
 
 # Configurar el logger
@@ -35,6 +35,6 @@ app.include_router(email.router)
 app.include_router(player.router) 
 app.include_router(character.router)
 app.include_router(scene.router)
-app.include_router(story_state.router)
+app.include_router(story.router)
 app.include_router(turn.router)
 app.include_router(ruleset.router)

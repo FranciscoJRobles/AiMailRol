@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.orm import Session
 from api.models.email import Email
 from api.schemas.email import EmailCreate, EmailOut
@@ -53,3 +54,15 @@ class EmailManager:
         """Devuelve el email no procesado más antiguo"""
         return db.query(Email).filter(Email.processed == False).order_by(Email.date.asc()).first()
 
+    @staticmethod
+    def get_emails_processed_not_sumarized_by_scene_id(db: Session, scene_id: int):
+        """Obtiene todos los emails asociados a una escena específica"""
+        return db.query(Email).filter(Email.scene_id == scene_id, Email.processed == True, Email.resumido == False).order_by(Email.date.asc()).all()
+
+    @staticmethod
+    def mark_emails_as_sumarized(db: Session, emails: List[Email]):
+        """Marca una lista de emails como resumidos"""
+        for email in emails:
+            email.resumido = True
+        db.commit()
+        

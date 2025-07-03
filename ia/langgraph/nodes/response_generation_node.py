@@ -4,7 +4,7 @@ Combina análisis, contexto y validaciones para generar la respuesta final.
 """
 
 from typing import Dict, Any
-from ..states.email_state import EmailState
+from ..states.story_state import EmailState
 from ia.ia_client import IAClient
 import logging
 import json

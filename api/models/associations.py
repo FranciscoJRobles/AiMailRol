@@ -8,9 +8,9 @@ campaign_characters = Table(
     Column("character_id", Integer, ForeignKey("characters.id"), primary_key=True)
 )
 
-story_state_characters = Table(
-    "story_state_characters",
+story_characters = Table(
+    "story_characters",
     Base.metadata,
-    Column("story_state_id", Integer, ForeignKey("story_states.id"), primary_key=True),
+    Column("story_id", Integer, ForeignKey("stories.id"), primary_key=True),
     Column("character_id", Integer, ForeignKey("characters.id"), primary_key=True)
 )

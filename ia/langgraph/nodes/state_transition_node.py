@@ -4,7 +4,7 @@ Actualiza el estado de la partida y persiste cambios en BD.
 """
 
 from typing import Dict, Any
-from ..states.email_state import EmailState
+from ..states.story_state import EmailState
 from api.managers.email_manager import EmailManager
 from api.managers.scene_manager import SceneManager
 from api.managers.turn_manager import TurnManager

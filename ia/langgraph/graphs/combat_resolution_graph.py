@@ -6,13 +6,14 @@ Maneja turnos, iniciativas y resolución de acciones de combate.
 from typing import Dict, Any, Literal
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
-from ..states.email_state import EmailState
+from ..states.story_state import EmailState
 from ..nodes.email_analysis_node import analyze_email_node
 from ..nodes.context_gathering_node import gather_context_node
 from ..nodes.rules_validation_node import validate_rules_node
 from api.managers.turn_manager import TurnManager
 from api.managers.character_manager import CharacterManager
 from api.models.scene import PhaseType
+from api.models.email import Email
 from ia.ia_client import IAClient
 from datetime import datetime
 import logging
@@ -320,7 +321,7 @@ class CombatResolutionGraph:
     
     def process_combat_email(
         self, 
-        email_id: int, 
+        email: Email, 
         db_session: Any,
         current_state: str = PhaseType.combate
     ) -> Dict[str, Any]:
@@ -328,7 +329,7 @@ class CombatResolutionGraph:
         Procesa un email de combate usando el grafo especializado.
         
         Args:
-            email_id: ID del email a procesar
+            email: Instancia del email a procesar
             db_session: Sesión de base de datos
             current_state: Estado actual del juego
             
@@ -336,18 +337,23 @@ class CombatResolutionGraph:
             Resultado del procesamiento de combate
         """
         try:
-            logger.info(f"Procesando email de combate {email_id}")
+            logger.info(f"Procesando email de combate {email.id}")
             
             # Estado inicial para combate
             initial_state: EmailState = {
-                'email_id': email_id,
-                'email_data': {},
+                'email_id': email.id,
+                'email_data': {
+                    'sender': email.sender,
+                    'recipients': email.recipients,
+                    'subject': email.subject,
+                    'body': email.body
+                },
                 'intenciones': None,
                 'transicion_detectada': None,
-                'campaign_id': None,
-                'scene_id': None,
+                'campaign_id': email.campaign_id,
+                'scene_id': email.scene_id,
                 'story_state_id': None,
-                'player_id': None,
+                'player_id': email.player_id,
                 'character_id': None,
                 'contexto_sistema': None,
                 'contexto_historial': None,
@@ -371,12 +377,12 @@ class CombatResolutionGraph:
             }
             
             # Ejecutar grafo de combate
-            config = {"configurable": {"thread_id": f"combat_{email_id}"}}
+            config = {"configurable": {"thread_id": f"combat_{email.id}"}}
             result = self.graph.invoke(initial_state, config)
             
             return {
                 'success': result.get('processed', False),
-                'email_id': email_id,
+                'email_id': email.id,
                 'respuesta_generada': result.get('respuesta_ia'),
                 'combat_ended': result.get('combat_ended', False),
                 'initiative_order': result.get('initiative_order'),
@@ -389,7 +395,7 @@ class CombatResolutionGraph:
             logger.error(f"Error procesando combate: {e}")
             return {
                 'success': False,
-                'email_id': email_id,
+                'email_id': email.id,
                 'errors': [f"Error crítico en combate: {str(e)}"]
             }
 

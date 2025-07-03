@@ -7,7 +7,7 @@ from typing import Dict, Any
 from langgraph.graph import StateGraph
 
 from ia.ia_client import IAClient, PerfilesEnum
-from ..states.email_state import EmailState
+from ..states.story_state import EmailState
 from api.managers.email_manager import EmailManager
 from api.managers.character_manager import CharacterManager
 from api.managers.player_manager import PlayerManager
@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 
 class EmailAnalysisNode:
     """Nodo encargado del análisis de emails entrantes."""
-    
+    def __init__(self):
+        self.ia_client = IAClient(perfil=PerfilesEnum.CLASIFICACION.value)
+        # Aquí podrías inicializar otros recursos necesarios, como un cliente IA específico
 
     def __call__(self, state: EmailState, modo: PhaseType = PhaseType.narracion) -> EmailState:
         """
@@ -49,10 +51,10 @@ class EmailAnalysisNode:
                 }
             
             # Actualizar identificadores en el estado
-            state['campaign_id'] = state['email_data'].get('campaign_id')
-            state['scene_id'] = state['email_data'].get('scene_id')
-            state['player_id'] = state['email_data'].get('player_id')
-            state['character_id'] = state['email_data'].get('character_id')
+            # state['campaign_id'] = state['email_data'].get('campaign_id')
+            # state['scene_id'] = state['email_data'].get('scene_id')
+            # state['player_id'] = state['email_data'].get('player_id')
+            # state['character_id'] = state['email_data'].get('character_id')
             
             # Obtener lista de personajes jugadores si hay campaña
             if state['campaign_id']:
@@ -192,9 +194,8 @@ class EmailAnalysisNode:
         if personaje_sender:
             prompt += f"\nEl personaje que envía este email es: {personaje_sender} y generalmente es a quien se le aplican estas clasificaciones."
         try:
-            iaClient = IAClient(perfil=PerfilesEnum.CLASIFICACION.value)
             contexto = dict(sistema=prompt, historial=[])
-            respuesta = iaClient.procesar_mensaje(texto, contexto)
+            respuesta = self.ia_client.procesar_mensaje(texto, contexto)
             data = json.loads(respuesta)            
             logger.info(f"clasificación completado. dict: {data}")
             return data

@@ -52,7 +52,7 @@ class PlayerManager:
         return player
 
     @staticmethod
-    def get_current_player_id_by_email(db: Session, email: str) -> Optional[int]:
+    def get_player_id_by_email(db: Session, email: str) -> Optional[int]:
         """Devuelve el ID del jugador actual asociado a un email"""
         # Extraer solo la dirección de correo electrónico
         email_address = parseaddr(email)[1]

@@ -28,7 +28,7 @@ ANALISIS_COMBATE_EMAIL = [
 
 TRANSICION_DE_DINÁMICA ={
     "combate",
-    "narración"
+    "narracion"
 }
 
 

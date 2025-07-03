@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from api.models.campaign import Campaign
 from api.models.character import Character
-from api.models.story_state import StoryState
+from api.models.story import Story
 from api.schemas.campaign import CampaignCreate, CampaignUpdate
 
 class CampaignManager:
@@ -78,9 +78,9 @@ class CampaignManager:
         return campaign
 
     @staticmethod
-    def get_campaign_story_states(db: Session, campaign_id: int):
-        """Obtiene todos los estados de historia de una campaña"""
-        return db.query(StoryState).filter(StoryState.campaign_id == campaign_id).all()
+    def get_campaign_stories(db: Session, campaign_id: int):
+        """Obtiene todas las historias de una campaña"""
+        return db.query(Story).filter(Story.campaign_id == campaign_id).all()
 
     @staticmethod
     def get_characters_by_campaign_id(db: Session, campaign_id: int):

@@ -22,7 +22,7 @@ class IAClient:
         "creativa": {
             "temperature": 1.0,
             "top_p": 0.95,
-            "max_tokens": 512
+            "max_tokens": 4094
         },
         "precisa": {
             "temperature": 0.2,
@@ -32,7 +32,7 @@ class IAClient:
         "neutral": {
             "temperature": 0.7,
             "top_p": 0.85,
-            "max_tokens": 400
+            "max_tokens": 1024
         },
         "resumen": {
             "temperature": 0.3,

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from api.models.character import Character
-from api.models.associations import campaign_characters
+from api.models.associations import campaign_characters, story_characters
 from api.schemas.character import CharacterCreate, CharacterUpdate
 from fastapi import HTTPException, status
 
@@ -58,3 +58,8 @@ class CharacterManager:
     def get_model():
         """Devuelve el modelo Character"""
         return Character
+
+    @staticmethod
+    def get_characters_by_story_id(db: Session, story_id: int):
+        """Devuelve una lista de instancias de Character asociadas a una historia"""
+        return db.query(Character).join(story_characters).filter(story_characters.c.story_id == story_id).all()

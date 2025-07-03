@@ -6,13 +6,14 @@ Orquesta el flujo completo desde análisis hasta respuesta.
 from typing import Dict, Any, Literal
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
-from ..states.email_state import EmailState
+from ..states.story_state import EmailState
 from ..nodes.email_analysis_node import analyze_email_node
 from ..nodes.context_gathering_node import gather_context_node
 from ..nodes.rules_validation_node import validate_rules_node
 from ..nodes.response_generation_node import generate_response_node
 from ..nodes.state_transition_node import transition_state_node
 from api.models.scene import PhaseType
+from api.models.email import Email
 from datetime import datetime
 import logging
 
@@ -51,7 +52,7 @@ class NarrativeProcessingGraph:
     
     def process_narrative_email(
         self, 
-        email_id: int, 
+        email: Email, 
         db_session: Any,
         current_state: str = PhaseType.narracion
     ) -> Dict[str, Any]:
@@ -59,7 +60,7 @@ class NarrativeProcessingGraph:
         Procesa un email completo usando el grafo.
         
         Args:
-            email_id: ID del email a procesar
+            email: Instancia del email a procesar
             db_session: Sesión de base de datos
             current_state: Estado actual del juego
             
@@ -67,22 +68,36 @@ class NarrativeProcessingGraph:
             Resultado del procesamiento
         """
         try:
-            logger.info(f"Iniciando procesamiento de email {email_id}")
+            logger.info(f"Iniciando procesamiento de email {email.id}")
             
             # Estado inicial
             initial_state: EmailState = {
-                'email_id': email_id,
-                'email_data': {},
-                'intenciones': None,
+                'email_id': email.id,
+                'email_data': {
+                    'sender': email.sender,
+                    'recipients': email.recipients,
+                    'subject': email.subject,
+                    'body': email.body
+                },
+                'clasificacion_intenciones': None,
                 'transicion_detectada': None,
-                'campaign_id': None,
-                'scene_id': None,
-                'story_state_id': None,
-                'player_id': None,
+                'metajuego_detectado': False,
+                'campaign_id': email.campaign_id,
+                'scene_id': email.scene_id,
+                'story_id': None,
+                'player_id': email.player_id,
                 'character_id': None,
-                'contexto_sistema': None,
+                'json_ambientacion': None,
+                'json_reglas': None,
+                'json_hojas_personajes': None,
+                'json_estado_actual_personajes': None,
                 'contexto_historial': None,
+                'contexto_ultimos_emails': None,
                 'personajes_pj': None,
+                'nombre_personajes_pj': None,
+                'personajes_pnj': None,
+                'contexto_sistema': None,
+                'contexto_usuario': None,
                 'ruleset': None,
                 'validaciones': None,
                 'estado_actual': current_state,
@@ -96,13 +111,13 @@ class NarrativeProcessingGraph:
             }
             
             # Ejecutar el grafo
-            config = {"configurable": {"thread_id": f"email_{email_id}"}}
+            config = {"configurable": {"thread_id": f"email_{email.id}"}}
             result = self.graph.invoke(initial_state, config)
             
             # Resultado del procesamiento
             processing_result = {
                 'success': result.get('processed', False),
-                'email_id': email_id,
+                'email_id': email.id,
                 'respuesta_generada': result.get('respuesta_ia'),
                 'email_respuesta': result.get('email_respuesta'),
                 'intenciones_detectadas': result.get('intenciones', []),
@@ -112,17 +127,17 @@ class NarrativeProcessingGraph:
             }
             
             if processing_result['success']:
-                logger.info(f"Email {email_id} procesado exitosamente")
+                logger.info(f"Email {email.id} procesado exitosamente")
             else:
-                logger.error(f"Error procesando email {email_id}: {processing_result['errors']}")
+                logger.error(f"Error procesando email {email.id}: {processing_result['errors']}")
             
             return processing_result
             
         except Exception as e:
-            logger.error(f"Error crítico procesando email {email_id}: {e}")
+            logger.error(f"Error crítico procesando email {email.id}: {e}")
             return {
                 'success': False,
-                'email_id': email_id,
+                'email_id': email.id,
                 'errors': [f"Error crítico: {str(e)}"]
             }
     

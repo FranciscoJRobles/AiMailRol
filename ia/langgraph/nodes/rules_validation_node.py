@@ -4,7 +4,7 @@ Valida acciones contra el ruleset de la campaña.
 """
 
 from typing import Dict, Any, List
-from ..states.email_state import EmailState
+from ..states.story_state import EmailState
 from ia.ia_client import IAClient
 import logging
 import json

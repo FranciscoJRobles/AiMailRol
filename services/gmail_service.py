@@ -19,12 +19,14 @@ from api.models.player import Player
 from api.models.character import Character
 from api.models.associations import campaign_characters
 from api.managers.campaign_manager import CampaignManager
-from api.managers.story_state_manager import StoryStateManager
+from api.managers.story_manager import StoryManager
+from api.managers.scene_manager import SceneManager
 from api.managers.character_manager import CharacterManager
 from api.managers.player_manager import PlayerManager
 from api.managers.email_manager import EmailManager
 from api.models.campaign import Campaign
-from api.models.story_state import StoryState  # Importar StoryState
+from api.models.story import Story
+from api.managers.story_manager import StoryManager
 
 # Variables globales para configuración y autenticación
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), '..', 'config')
@@ -225,39 +227,26 @@ class GmailService:
                 self.move_to_label(msg['id'], label_ignore)
                 continue
 
-            # Buscar palabra clave de StoryState en el formato (LABEL)
-            story_state_keyword_match = re.search(r'\((.*?)\)', subject)
-            story_state = None
-            if story_state_keyword_match:
-                story_state_keyword = story_state_keyword_match.group(1)
-                story_state = StoryStateManager.get_active_story_state_by_keyword(db, story_state_keyword, campaign.id)
-            else:
+            sender = next((h['value'] for h in headers if h['name'] == 'From'), '')
+            player_id = PlayerManager.get_player_id_by_email(db, sender)
+            character_id = CharacterManager.get_character_id_by_player_and_campaign(db, player_id, campaign.id)
+
+            story_keyword_match = re.search(r'\((.*?)\)', subject)
+            story = None
+            if story_keyword_match:
+                story_keyword = story_keyword_match.group(1)
+                story = StoryManager.get_active_story_by_keyword(db, story_keyword, campaign.id)
+
+            if not story:
+                # Handle missing story case
                 self.move_to_label(msg['id'], label_ignore)
                 continue
 
-            if not story_state:
-                # Si no se encuentra StoryState, marcar como solicitud de creación
-                print(f"Solicitud de creación de StoryState detectada: {subject}")
-                # TODO: Implementar lógica para manejar solicitudes de creación de StoryState
-                continue
-
-            # Procesar email
-            sender = next((h['value'] for h in headers if h['name'] == 'From'), '')
-            recipients = [h['value'] for h in headers if h['name'] in ['To', 'Cc', 'Bcc']]
+            scene_id = SceneManager.get_active_scene_by_story(db, story.id) if story else None
+            body = msg_data['snippet']  # O msg_data['payload']['body'] si está disponible
+            recipients = next((h['value'] for h in headers if h['name'] == 'To'), '').split(',')
             thread_id = msg_data.get('threadId', '')
-            message_id = next((h['value'] for h in headers if h['name'].lower() == 'message-id'), '')
-            body = ''
-            if 'data' in msg_data['payload']['body']:
-                body = base64.urlsafe_b64decode(msg_data['payload']['body']['data']).decode('utf-8')
-            else:
-                for part in msg_data['payload'].get('parts', []):
-                    if part['mimeType'] == 'text/plain' and 'data' in part['body']:
-                        body = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-                        break
-
-            player_id = PlayerManager.get_current_player_id_by_email(db, sender)
-            character_id = CharacterManager.get_character_id_by_player_and_campaign(db, player_id, campaign.id)
-            scene_id = StoryStateManager.get_scene_id_by_story_state(db, story_state) if story_state else None
+            message_id = msg_data.get('id', '')
             email_obj = EmailCreate(
                 player_id=player_id,
                 character_id=character_id,

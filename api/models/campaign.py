@@ -12,4 +12,4 @@ class Campaign(Base):
     resumen = Column(Text, nullable=True)
     activa = Column(Boolean, nullable=False, default=True)  # Nuevo campo para indicar si la campaña está activa
     characters = relationship("Character", secondary=campaign_characters, back_populates="campaigns")
-    story_states = relationship("StoryState", back_populates="campaign")
+    stories = relationship("Story", back_populates="campaign")

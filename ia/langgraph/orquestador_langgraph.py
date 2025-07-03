@@ -13,7 +13,6 @@ from api.models.email import Email
 from api.models.scene import Scene, PhaseType
 from .graphs.narrative_processing_graph import narrative_processing_graph
 from .graphs.combat_resolution_graph import combat_resolution_graph
-from .states.game_state import GameState
 from datetime import datetime
 import logging
 
@@ -63,13 +62,13 @@ class OrquestadorLangGraph:
             # Procesar email con el grafo seleccionado
             if graph_to_use == PhaseType.combate:
                 result = self.combat_graph.process_combat_email(
-                    email_id, 
+                    email, 
                     db_session, 
                     current_state.get('estado_actual', PhaseType.combate)
                 )
             else:
                 result = self.narrative_graph.process_narrative_email(
-                    email_id, 
+                    email, 
                     db_session, 
                     current_state.get('estado_actual', PhaseType.narracion)
                 )
@@ -199,11 +198,9 @@ class OrquestadorLangGraph:
                 'last_updated': datetime.now()
             }
 
-            # Consultar la escena y usar el campo fase_actual
+            # Recuperar fase actual de la escena si existe
             if scene_id:
-                scene = SceneManager.get_actual_phase_by_scene_id(scene_id)
-                if scene:
-                    current_state['estado_actual'] = scene.fase_actual
+                current_state['estado_actual'] = SceneManager.get_actual_phase_by_scene_id(db_session, scene_id)
 
             # Cachear estado
             if campaign_id:
