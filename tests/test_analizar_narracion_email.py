@@ -1,6 +1,6 @@
 import os
 import unittest
-from ia.langgraph.nodes.email_analysis_node import EmailAnalysisNode
+from ia.langgraph.nodes.narrative_email_analysis_node import NarrativeEmailAnalysisNode
 import json
 from utils.logger_config import configure_logging
 
@@ -9,7 +9,7 @@ logger = configure_logging()
 
 class TestAnalizarNarracionEmail(unittest.TestCase):
     def setUp(self):
-        self.node = EmailAnalysisNode()
+        self.node = NarrativeEmailAnalysisNode()
 
     def test_analizar_narracion_email(self):
         logger.info("Iniciando prueba: test_analizar_narracion_email")

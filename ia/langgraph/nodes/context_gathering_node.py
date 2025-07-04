@@ -11,8 +11,8 @@ from api.managers.campaign_manager import CampaignManager
 from api.managers.ruleset_manager import RulesetManager
 from api.managers.character_manager import CharacterManager
 from api.models.character import Character
-from ia.langgraph.agentes.agente_recopilador_contexto import AgenteRecopiladorContexto
-from ia.langgraph.agentes.agente_resumidor_textos import AgenteResumidorTextos
+from ia.langgraph.chains.context_collector_chain import ContextCollectorChain
+from ia.langgraph.chains.text_summarize_chain import TextSummarizeChain
 from ia.ia_client import IAClient
 import logging
 
@@ -23,7 +23,7 @@ class ContextGatheringNode:
     
     def __init__(self):
         self.ia_client = IAClient(perfil="resumen")
-        self.resumidor_textos = AgenteResumidorTextos()
+        self.resumidor_textos = TextSummarizeChain()
     
     def __call__(self, state: EmailState) -> EmailState:
         """
@@ -39,7 +39,7 @@ class ContextGatheringNode:
             logger.info(f"Recopilando contexto para escena: {state.get('scene_id')}")
             story_id = SceneManager.get_story_id_by_scene_id(state['db_session'], state.get('scene_id'))
             # Inicializar gestor de emails donde recuperamos los emails recientes y resumimos si superan un límite sin resumir
-            recopilador = AgenteRecopiladorContexto(
+            recopilador = ContextCollectorChain(
                 state['db_session'], 
                 self.resumidor_textos
             )

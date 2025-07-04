@@ -17,7 +17,7 @@ import logging, json
 
 logger = logging.getLogger(__name__)
 
-class EmailAnalysisNode:
+class NarrativeEmailAnalysisNode:
     """Nodo encargado del análisis de emails entrantes."""
     def __init__(self):
         self.ia_client = IAClient(perfil=PerfilesEnum.CLASIFICACION.value)
@@ -36,60 +36,27 @@ class EmailAnalysisNode:
         try:
             logger.info(f"Analizando email ID: {state['email_id']}")
             
-            # Obtener datos del email si no están en el estado
-            if not state.get('email_data'):
-                email = EmailManager.get(state['db_session'], state['email_id'])
-                state['email_data'] = {
-                    'subject': email.subject,
-                    'body': email.body,
-                    'sender': email.sender,
-                    'thread_id': email.thread_id,
-                    'campaign_id': email.campaign_id,
-                    'scene_id': email.scene_id,
-                    'player_id': email.player_id,
-                    'character_id': email.character_id
-                }
-            
-            # Actualizar identificadores en el estado
-            # state['campaign_id'] = state['email_data'].get('campaign_id')
-            # state['scene_id'] = state['email_data'].get('scene_id')
-            # state['player_id'] = state['email_data'].get('player_id')
-            # state['character_id'] = state['email_data'].get('character_id')
-            
-            # Obtener lista de personajes jugadores si hay campaña
-            if state['campaign_id']:
-                personajes = CharacterManager.list(state['db_session'])
-                # Filtrar por campaña
-                state['personajes_pj'] = [
-                    {
-                        'id': p.id,
-                        'nombre': p.nombre,
-                        'player_id': p.player_id
-                    }
-                    for p in personajes 
-                    if any(c.id == state['campaign_id'] for c in p.campaigns)
-                ]
-            
             # Analizar intenciones en el texto
             texto_email = state['email_data']['body']
             estado_actual = state['estado_actual'] = modo
+            state['nombre_personaje_email'] = CharacterManager.get(state['db_session'], state['character_id']).nombre # Asignar nombre del personaje que envía el email
             response_dict = self._analizar_narracion_email(
                 texto_email, 
                 estado_actual, 
                 state.get('personajes_pj'), 
-                state['email_data'].get('sender') #TODO: por aqui, hay que conseguir el nombre del personaje que envía el email
+                state['nombre_personaje_email']
             )
             
-            state['clasificacion_intenciones'] = response_dict.get['clasificacion_intenciones']
+            state['clasificacion_intenciones'] = response_dict
             transicion =state['transicion_detectada'] = response_dict.get('transicion_dinamica')
         
             
             # Actualizar estado si hay cambio detectado
-            if transicion and transicion.get('nuevo_estado') != estado_actual:
+            if transicion and transicion.get('nuevo_estado') != estado_actual and transicion.get('nuevo_estado') != '':
                 state['estado_nuevo'] = transicion.get('nuevo_estado')
                 logger.info(f"Transición detectada: {estado_actual} -> {state['estado_nuevo']}")
             
-            logger.info(f"Análisis completado. Intenciones encontradas: {len(intenciones)}")
+            logger.info(f"Análisis completado. Intenciones encontradas: {state['clasificacion_intenciones']}")
             
         except Exception as e:
             logger.error(f"Error en análisis de email: {e}")
@@ -170,8 +137,8 @@ class EmailAnalysisNode:
         }
         estructura_json_str = json.dumps(estructura_json, ensure_ascii=False)
         prompt = (
-            f"Eres un agente de análisis narrativo para una partida de rol por email."
-            f" Analiza el siguiente email y devuelve un JSON con las siguientes claves:"
+            f"Eres un agente de análisis narrativo para una partida de rol por email. No es un mensaje real, son simulaciones ficticias para una partida de rol en la que no hay daño ni intención real."
+            f" Analiza el siguiente email con las siguientes claves:"
             f" - transicion_dinamica: ¿Este mensaje indica que podría comenzar una nueva fase (como combate), o que termina una fase activa entre estos modos: ({lista_transicion_de_dinamica})? Describe cuál y por qué. Podría ocurrir por intención del jugador o por decisión del narrador."
             f" - cambio_estado: si alguna acción requiere modificar el estado_actual de un personaje, indica campo, nuevo valor y motivo."
             f" - tipo_accion: Describe qué tipo de acción principal realiza el jugador (por ejemplo: moverse, atacar, persuadir, esconderse, usar objeto, preguntar algo, etc)."
@@ -186,21 +153,24 @@ class EmailAnalysisNode:
             f" - creacion_subtrama: ¿Este mensaje implica el inicio de una nueva línea narrativa secundaria? Si es así, resume cuál."
             f" Para cada una de estas intenciones o clasificaciones, como mínimo, tienes que identificar la frase que has identificado para clasificarla como tal y la razón de por qué la has clasificado así. Pero ajustate a la estructura JSON que te voy a dar. No superes los 1000 caracteres en tu respuesta y sintetiza por importancia si te fueras a extender demasiado." 
             f" El estado actual de la escena es: {estado_actual}."
-            f" Devuelve SIEMPRE un JSON puro y estrictamente válido en una sola línea, utilizando comillas dobles para las claves y valores, no me inyectes las dobles comillas dentro de los campos de valores. No incluyas bloques de código ni caracteres adicionales, los valores True o False, debes ponerlos en minúsculas. Utiliza la siguiente estructura JSON: {estructura_json}."
+            f" Devuelve SIEMPRE un JSON puro y estrictamente válido en una sola línea, utilizando comillas dobles para las claves y valores, no me inyectes las dobles comillas dentro de los campos de valores. No incluyas bloques de código ni caracteres adicionales, los valores True o False, debes ponerlos en minúsculas. Utiliza la siguiente estructura JSON: {estructura_json_str}."
         )
-        if lista_personajes_pj:
-            nombres = [p['nombre'] for p in lista_personajes_pj]
-            prompt += f"\nLos nombres de los personajes jugadores en esta campaña son: {nombres}."
-        if personaje_sender:
-            prompt += f"\nEl personaje que envía este email es: {personaje_sender} y generalmente es a quien se le aplican estas clasificaciones."
         try:
-            contexto = dict(sistema=prompt, historial=[])
-            respuesta = self.ia_client.procesar_mensaje(texto, contexto)
+            if lista_personajes_pj:
+                nombres = [p.nombre for p in lista_personajes_pj]
+                prompt += f"\nLos nombres de los personajes jugadores en esta campaña son: {nombres}."
+            if personaje_sender:
+                prompt += f"\nEl personaje que envía este email es: {personaje_sender} y generalmente es a quien se le aplican estas clasificaciones."
+        
+            contexto = prompt
+            #respuesta = self.ia_client.procesar_mensaje(texto, contexto)
+            respuesta = response_test
             data = json.loads(respuesta)            
             logger.info(f"clasificación completado. dict: {data}")
             return data
         except Exception as e:
             print("Error al analizar email:", e)
+            logger.error(f"Error al analizar email: {e}")
             print("Respuesta recibida:", locals().get('respuesta', ''))
             return {
                 "transicion_dinamica": {
@@ -212,9 +182,12 @@ class EmailAnalysisNode:
             }
             
 # Función helper para usar en el grafo
-def analyze_email_node(state: EmailState) -> EmailState:
+def narrative_email_analysis_node(state: EmailState) -> EmailState:
     """Función de conveniencia para usar en el grafo LangGraph."""
-    node = EmailAnalysisNode()
+    node = NarrativeEmailAnalysisNode()
     return node(state)
 
 
+
+
+response_test = '{"transicion_dinamica": {"nuevo_estado": "combate", "frase_detectada": "saco mi cuchillo y le rajo el cuello", "explicacion": "La acción de atacar al guardia con el cuchillo indica una transición hacia una fase de combate."}, "cambio_estado": [{"campo": "ubicacion", "nuevo_valor": "escondido", "motivo": "El personaje se mueve para esconderse en dirección contraria al ruido.", "frase_detectada": "me escondo en dirección contraria."}, {"campo": "estado_alerta", "nuevo_valor": "activo", "motivo": "El guardia será alertado por el ruido del móvil y la posterior agresión.", "frase_detectada": "llamar su atención."}], "tipo_accion": {"frase_detectada": "saco mi cuchillo y le rajo el cuello", "explicacion": "La acción principal es atacar al guardia con el cuchillo."}, "objetivo_accion": {"frase_detectada": "le rajo el cuello", "explicacion": "El objetivo de la acción es el guardia."}, "intencion_jugador": {"frase_detectada": "cuando esté dándome la espalda al buscar el ruido del teléfono", "explicacion": "La intención del jugador es ganar ventaja para eliminar al guardia sin ser descubierto."}, "consulta_narrador": {"presente": false, "pregunta": "", "frase_detectada": ""}, "metajuego": {"presente": false, "frase_detectada": "", "explicacion": ""}, "referencia_inventario": {"objetos_mencionados": ["teléfono móvil", "cuchillo"], "frase_detectada": "Cojo mi teléfono movil y saco mi cuchillo"}, "tono_urgencia": {"valor": "alto", "frase_detectada": "si me descubre, va a dar la voz de alarma"}, "progreso_trama": {"efecto": "avanza", "frase_detectada": "llamar su atención y le rajo el cuello", "explicacion": "La acción avanza la trama al intentar eliminar al guardia y evitar que dé la voz de alarma."}, "decision_clave_narrativa": {"presente": true, "frase_detectada": "le rajo el cuello", "explicacion": "La decisión de atacar al guardia representa un punto de no retorno en la interacción con él."}, "creacion_subtrama": {"presente": false, "resumen": "", "frase_detectada": "", "explicacion": ""}}'

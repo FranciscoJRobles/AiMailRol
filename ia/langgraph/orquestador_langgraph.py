@@ -11,8 +11,7 @@ from api.managers.turn_manager import TurnManager
 from api.managers.scene_manager import SceneManager
 from api.models.email import Email  
 from api.models.scene import Scene, PhaseType
-from .graphs.narrative_processing_graph import narrative_processing_graph
-from .graphs.combat_resolution_graph import combat_resolution_graph
+from .graphs.processing_graph import processing_graph
 from datetime import datetime
 import logging
 
@@ -22,8 +21,7 @@ class OrquestadorLangGraph:
     """Orquestador principal usando LangGraph para procesamiento de emails."""
     
     def __init__(self):
-        self.narrative_graph = narrative_processing_graph
-        self.combat_graph = combat_resolution_graph
+        self.narrative_graph = processing_graph
         self.game_states = {}  # Cache de estados de juego por campaña
     
     def procesar_email(self) -> Dict[str, Any]:
@@ -60,18 +58,12 @@ class OrquestadorLangGraph:
             graph_to_use = self._select_graph(email, current_state)
             
             # Procesar email con el grafo seleccionado
-            if graph_to_use == PhaseType.combate:
-                result = self.combat_graph.process_combat_email(
-                    email, 
-                    db_session, 
-                    current_state.get('estado_actual', PhaseType.combate)
-                )
-            else:
-                result = self.narrative_graph.process_narrative_email(
-                    email, 
-                    db_session, 
-                    current_state.get('estado_actual', PhaseType.narracion)
-                )
+
+            result = self.narrative_graph.process_email(
+                email, 
+                db_session, 
+                current_state.get('estado_actual', PhaseType.narracion)
+            )
             
             # Actualizar estado del juego si el procesamiento fue exitoso
             if result.get('success'):

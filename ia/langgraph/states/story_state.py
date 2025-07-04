@@ -5,6 +5,7 @@ Estado que se pasa entre nodos durante el procesamiento de un email.
 from typing import TypedDict, Optional, List, Dict, Any
 from datetime import datetime
 from api.models.character import Character
+from api.models.scene import PhaseType
 
 class EmailState(TypedDict):
     """Estado que contiene toda la información necesaria para procesar un email."""
@@ -36,6 +37,8 @@ class EmailState(TypedDict):
     personajes_pj: Optional[List[Character]]  # Lista de personajes jugadores
     personajes_pnj: Optional[List[Dict[str, Any]]]  # Lista de personajes no jugadores relevantes
     nombre_personajes_pj: Optional[List[str]]  # Nombres de personajes jugadores
+    nombre_personajes_pnj: Optional[List[str]]  # Nombres de personajes no jugadores relevantes
+    nombre_personaje_email: Optional[str]  # Nombre del personaje que envía el email
     
     contexto_sistema: Optional[Dict[str, Any]]  # Prompt de sistema para la IA
     contexto_usuario: Optional[Dict[str, Any]]  # Prompt de usuario para la IA
@@ -45,8 +48,8 @@ class EmailState(TypedDict):
     validaciones: Optional[List[Dict[str, Any]]]  # Validaciones aplicadas
     
     # Estado del juego
-    estado_actual: str  # "narracion" o "accion_en_turno"
-    estado_nuevo: Optional[str]  # Nuevo estado si hay transición
+    estado_actual: PhaseType  # "narracion" o "accion_en_turno"
+    estado_nuevo: Optional[PhaseType]  # Nuevo estado si hay transición
     
     # Información de combate (si aplica)
     turno_actual: Optional[int]

@@ -2,15 +2,18 @@
 Grafo principal para procesamiento de emails usando LangGraph.
 Orquesta el flujo completo desde análisis hasta respuesta.
 """
-
+from IPython.display import Image, display
 from typing import Dict, Any, Literal
 from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from ..states.story_state import EmailState
-from ..nodes.email_analysis_node import analyze_email_node
+from ..nodes.narrative_email_analysis_node import narrative_email_analysis_node
+from ..nodes.combat_email_analysis_node import combat_email_analysis_node
 from ..nodes.context_gathering_node import gather_context_node
 from ..nodes.rules_validation_node import validate_rules_node
-from ..nodes.response_generation_node import generate_response_node
+from ..nodes.narrative_response_generation_node import narrative_generate_response_node
+from ..nodes.combat_response_generation_node import combat_generate_response_node
 from ..nodes.state_transition_node import transition_state_node
 from api.models.scene import PhaseType
 from api.models.email import Email
@@ -19,7 +22,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class NarrativeProcessingGraph:
+class ProcessingGraph:
     """Grafo principal para procesamiento de emails de rol."""
     
     def __init__(self):
@@ -34,23 +37,34 @@ class NarrativeProcessingGraph:
         
         # Agregar nodos
         workflow.add_node("gather_context", gather_context_node)
-        workflow.add_node("analyze_email", analyze_email_node)
-        workflow.add_node("generate_response", generate_response_node)
+        workflow.add_node("narrative_email_analysis", narrative_email_analysis_node)
+        workflow.add_node("combat_email_analysis", combat_email_analysis_node)
+        workflow.add_node("narrative_generate_response", narrative_generate_response_node)
+        workflow.add_node("combat_generate_response", combat_generate_response_node)
         workflow.add_node("transition_state", transition_state_node)
         
         # Definir el flujo
         workflow.set_entry_point("gather_context")
         
-        # Flujo principal: análisis -> contexto -> validación -> respuesta -> transición
-        workflow.add_edge("gather_context", "analyze_email")
-        workflow.add_edge("analyze_email", "generate_response")
-        workflow.add_edge("generate_response", "transition_state")
-        workflow.add_edge("transition_state", END)
+        workflow.add_conditional_edges(
+            "gather_context",
+                lambda state: self.route_analysis_node(state),  # Usar route_analysis_node para decidir el nodo
+            {
+                "narrative_email_analysis": "narrative_email_analysis",
+                "combat_email_analysis": "combat_email_analysis"
+            }
+        )
+        workflow.add_edge("narrative_email_analysis", "narrative_generate_response")
+        workflow.add_edge("combat_email_analysis", "combat_generate_response")
+        workflow.add_edge("narrative_generate_response", END)
+        workflow.add_edge("combat_generate_response", END)
+        
+
         
         # Compilar el grafo
         return workflow.compile(checkpointer=self.checkpointer)
     
-    def process_narrative_email(
+    def process_email(
         self, 
         email: Email, 
         db_session: Any,
@@ -142,70 +156,26 @@ class NarrativeProcessingGraph:
             }
     
     def get_graph_visualization(self) -> str:
-        """Retorna una representación visual del grafo."""
+        """Genera una visualización automática del grafo compilado en formato PNG usando Mermaid."""
         try:
-            # Intentar generar visualización si está disponible
-            from langgraph.graph import draw_ascii
-            return draw_ascii(self.graph)
-        except ImportError:
-            return """
-            Flujo del grafo de procesamiento de emails:
+            # Obtener el grafo compilado
+            compiled_graph = self._build_graph()
+            display(Image(compiled_graph.get_graph().draw_mermaid_png()))
             
-            [INICIO] -> gather_context -> analyze_email 
-                     -> generate_response -> transition_state -> [FIN]
-            """
-    
-    def process_email_stream(
-        self, 
-        email_id: int, 
-        db_session: Any,
-        current_state: str = PhaseType.narracion
-    ):
-        """
-        Procesa un email y retorna un stream de eventos para monitoreo.
-        
-        Args:
-            email_id: ID del email a procesar
-            db_session: Sesión de base de datos
-            current_state: Estado actual del juego
-            
-        Yields:
-            Eventos del procesamiento paso a paso
-        """
-        try:
-            initial_state: EmailState = {
-                'email_id': email_id,
-                'email_data': {},
-                'intenciones': None,
-                'transicion_detectada': None,
-                'campaign_id': None,
-                'scene_id': None,
-                'story_state_id': None,
-                'player_id': None,
-                'character_id': None,
-                'contexto_sistema': None,
-                'contexto_historial': None,
-                'personajes_pj': None,
-                'ruleset': None,
-                'validaciones': None,
-                'estado_actual': current_state,
-                'estado_nuevo': None,
-                'respuesta_ia': None,
-                'email_respuesta': None,
-                'timestamp': datetime.now(),
-                'processed': False,
-                'errors': None,
-                'db_session': db_session
-            }
-            
-            config = {"configurable": {"thread_id": f"email_{email_id}"}}
-            
-            # Stream de eventos
-            for event in self.graph.stream(initial_state, config):
-                yield event
-                
+            return "Visualización generada"
         except Exception as e:
-            yield {"error": f"Error en stream: {str(e)}"}
+            return f"Error generando la visualización: {str(e)}"
+    
+    def route_analysis_node(self,state: EmailState):
+        """
+        Determina qué nodo de análisis usar basado en el estado actual.
+    
+        """
+        if state.get("estado_actual") == PhaseType.narracion:
+            return "narrative_email_analysis"
+        elif state.get("estado_actual") == PhaseType.combate:
+            return "combat_email_analysis"
+        return END
 
 # Instancia global del grafo
-narrative_processing_graph = NarrativeProcessingGraph()
+processing_graph = ProcessingGraph()

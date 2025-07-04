@@ -22,12 +22,12 @@ class IAClient:
         "creativa": {
             "temperature": 1.0,
             "top_p": 0.95,
-            "max_tokens": 4094
+            "max_tokens": 8094
         },
         "precisa": {
             "temperature": 0.2,
             "top_p": 0.7,
-            "max_tokens": 256
+            "max_tokens": 1024
         },
         "neutral": {
             "temperature": 0.7,
@@ -37,7 +37,7 @@ class IAClient:
         "resumen": {
             "temperature": 0.3,
             "top_p": 0.8,
-            "max_tokens": 2048
+            "max_tokens": 4096
         },
         "clasificacion": {
             "temperature": 0.1,
@@ -96,7 +96,7 @@ class IAClient:
         self.contexto_inicial = SystemMessage(content=texto_contexto)
 
 
-    def procesar_mensaje(self, mensaje: str, contexto: dict = None) -> str:
+    def procesar_mensaje(self, mensaje: str, contexto: str = None) -> str:
         """
         Procesa un mensaje usando la IA de Azure OpenAI y devuelve la respuesta generada.
         Permite especificar un perfil de parámetros para esta llamada.
@@ -107,12 +107,9 @@ class IAClient:
         """
         mensajes = []
         # Ejemplo de contexto: puedes pasar un historial de mensajes o instrucciones de sistema
-        if contexto:
-            if "sistema" in contexto:
-                mensajes.append(SystemMessage(content=contexto["sistema"]))
-            if "historial" in contexto:
-                for msg in contexto["historial"]:
-                    mensajes.append(HumanMessage(content=msg))
+        if contexto:          
+            mensajes.append(SystemMessage(content=contexto))
+          
         mensajes.append(HumanMessage(content=mensaje))
         response = self.llm.invoke(mensajes)       
         
